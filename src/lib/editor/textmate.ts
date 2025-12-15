@@ -9,9 +9,15 @@ import { StreamLanguage, StringStream, LanguageSupport } from '@codemirror/langu
 import * as vsctm from 'vscode-textmate';
 import * as oniguruma from 'vscode-oniguruma';
 
+// Get base URL for assets (handles both root and subdirectory deployments)
+function getAssetUrl(path: string): string {
+  const baseUrl = new URL('./', document.baseURI).href.replace(/\/$/, '');
+  return `${baseUrl}${path}`;
+}
+
 // Local paths for grammar and oniguruma WASM
-const LUAU_GRAMMAR_URL = '/grammar/Luau.tmLanguage.json';
-const ONIGURUMA_WASM_URL = '/wasm/onig.wasm';
+const LUAU_GRAMMAR_PATH = '/grammar/Luau.tmLanguage.json';
+const ONIGURUMA_WASM_PATH = '/wasm/onig.wasm';
 
 // Singleton state
 let registry: vsctm.Registry | null = null;
@@ -46,13 +52,13 @@ async function initTextMate(): Promise<void> {
   
   initPromise = (async () => {
     // Load oniguruma WASM
-    const wasmResponse = await fetch(ONIGURUMA_WASM_URL);
+    const wasmResponse = await fetch(getAssetUrl(ONIGURUMA_WASM_PATH));
     const wasmBuffer = await wasmResponse.arrayBuffer();
     
     await oniguruma.loadWASM(wasmBuffer);
     
     // Fetch the Luau grammar
-    const grammarResponse = await fetch(LUAU_GRAMMAR_URL);
+    const grammarResponse = await fetch(getAssetUrl(LUAU_GRAMMAR_PATH));
     const grammarJson = await grammarResponse.text();
     
     // Create the registry

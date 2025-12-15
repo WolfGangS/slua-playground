@@ -37,7 +37,8 @@ export async function loadLuauWasm(): Promise<LuauWasmModule> {
     try {
       // Build the full URL for the ES module
       // This is required because files in /public can't be imported directly in Vite
-      const baseUrl = window.location.origin;
+      // Use document.baseURI to handle both root and subdirectory deployments
+      const baseUrl = new URL('./', document.baseURI).href.replace(/\/$/, '');
       const moduleUrl = `${baseUrl}/wasm/luau.js`;
       
       // Dynamic import of ES module

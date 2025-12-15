@@ -56,7 +56,8 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npx vite build
+        # Use relative base so the same build works from any path (/ or /playground/)
+        run: npx vite build --base=./
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
