@@ -1,0 +1,132 @@
+import { writable, get } from 'svelte/store';
+import LZString from 'lz-string';
+
+export interface OutputLine {
+  type: 'log' | 'error' | 'warn';
+  text: string;
+}
+
+export interface PlaygroundState {
+  files: Record<string, string>;
+  activeFile: string;
+  output: OutputLine[];
+  isRunning: boolean;
+}
+
+// Default initial code
+const defaultCode = `-- Welcome to the Luau Playground!
+-- Write your code here and click Run
+
+local function greet(name: string): string
+    return "Hello, " .. name .. "!"
+end
+
+print(greet("World"))
+
+-- Try some Luau features:
+local numbers = {1, 2, 3, 4, 5}
+local sum = 0
+for _, n in numbers do
+    sum += n
+end
+print("Sum:", sum)
+`;
+
+// Load initial state from URL if available
+function getInitialState(): { files: Record<string, string>; activeFile: string } {
+  if (typeof window === 'undefined') {
+    return { files: { 'main.luau': defaultCode }, activeFile: 'main.luau' };
+  }
+  
+  const hash = window.location.hash;
+  if (!hash.startsWith('#code=')) {
+    return { files: { 'main.luau': defaultCode }, activeFile: 'main.luau' };
+  }
+  
+  try {
+    const encoded = hash.slice(6); // Remove '#code='
+    const json = LZString.decompressFromEncodedURIComponent(encoded);
+    if (!json) {
+      return { files: { 'main.luau': defaultCode }, activeFile: 'main.luau' };
+    }
+    
+    const state = JSON.parse(json) as { files: Record<string, string>; active: string };
+    
+    // Validate
+    if (!state.files || typeof state.files !== 'object' || Object.keys(state.files).length === 0) {
+      return { files: { 'main.luau': defaultCode }, activeFile: 'main.luau' };
+    }
+    
+    const active = state.active in state.files ? state.active : Object.keys(state.files)[0];
+    return { files: state.files, activeFile: active };
+  } catch {
+    return { files: { 'main.luau': defaultCode }, activeFile: 'main.luau' };
+  }
+}
+
+const initialState = getInitialState();
+
+// Stores - initialized with URL state if available
+export const files = writable<Record<string, string>>(initialState.files);
+export const activeFile = writable<string>(initialState.activeFile);
+export const output = writable<OutputLine[]>([]);
+export const isRunning = writable<boolean>(false);
+export const executionTime = writable<number | null>(null);
+
+export function setExecutionTime(ms: number | null) {
+  executionTime.set(ms);
+}
+
+// Actions
+export function addFile(name: string, content: string = '') {
+  files.update((f) => ({ ...f, [name]: content }));
+  activeFile.set(name);
+}
+
+export function removeFile(name: string) {
+  files.update((f) => {
+    const { [name]: _, ...rest } = f;
+    return rest;
+  });
+  
+  // Switch to another file if we removed the active one
+  const currentActive = get(activeFile);
+  if (currentActive === name) {
+    const remaining = Object.keys(get(files));
+    if (remaining.length > 0) {
+      activeFile.set(remaining[0]);
+    }
+  }
+}
+
+export function updateFile(name: string, content: string) {
+  files.update((f) => ({ ...f, [name]: content }));
+}
+
+export function setActiveFile(name: string) {
+  activeFile.set(name);
+}
+
+export function appendOutput(line: OutputLine) {
+  output.update((o) => [...o, line]);
+}
+
+export function clearOutput() {
+  output.set([]);
+}
+
+export function setRunning(running: boolean) {
+  isRunning.set(running);
+}
+
+// Get all files content for execution
+export function getAllFiles(): Record<string, string> {
+  return get(files);
+}
+
+export function getActiveFileContent(): string {
+  const f = get(files);
+  const active = get(activeFile);
+  return f[active] || '';
+}
+

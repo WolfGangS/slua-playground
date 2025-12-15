@@ -1,0 +1,426 @@
+/**
+ * Luau WASM Module Loader and Runner
+ * 
+ * Loads the ES6 WASM module via dynamic import with full URL.
+ */
+
+import { appendOutput, clearOutput, setRunning, setExecutionTime, getActiveFileContent, activeFile, getAllFiles } from '$lib/stores/playground';
+import { get } from 'svelte/store';
+import type { 
+  LuauWasmModule, 
+  ExecuteResult, 
+  DiagnosticsResult, 
+  AutocompleteResult, 
+  HoverResult,
+  LuauDiagnostic,
+  LuauCompletion,
+  CreateLuauModule
+} from './types';
+
+let wasmModule: LuauWasmModule | null = null;
+let modulePromise: Promise<LuauWasmModule> | null = null;
+
+/**
+ * Load the Luau WASM module.
+ * Uses dynamic import with full URL for ES modules in /public.
+ */
+export async function loadLuauWasm(): Promise<LuauWasmModule> {
+  if (wasmModule) {
+    return wasmModule;
+  }
+
+  if (modulePromise) {
+    return modulePromise;
+  }
+
+  modulePromise = (async (): Promise<LuauWasmModule> => {
+    try {
+      // Build the full URL for the ES module
+      // This is required because files in /public can't be imported directly in Vite
+      const baseUrl = window.location.origin;
+      const moduleUrl = `${baseUrl}/wasm/luau.js`;
+      
+      // Dynamic import of ES module
+      const mod = await import(/* @vite-ignore */ moduleUrl);
+      const createModule: CreateLuauModule = mod.default || mod.createLuauModule;
+      
+      if (typeof createModule !== 'function') {
+        throw new Error('createLuauModule function not found in module');
+      }
+
+      const module = await createModule({
+        locateFile: (path: string) => {
+          if (path.endsWith('.wasm')) {
+            return `${baseUrl}/wasm/luau.wasm`;
+          }
+          return `${baseUrl}/wasm/${path}`;
+        },
+      });
+
+      wasmModule = module;
+      console.log('[Luau WASM] Module loaded successfully');
+      return module;
+    } catch (error) {
+      console.warn('[Luau WASM] Failed to load module, using mock:', error);
+      // Return mock module for development
+      wasmModule = createMockModule();
+      return wasmModule;
+    }
+  })();
+
+  return modulePromise;
+}
+
+/**
+ * Check if WASM module is loaded.
+ */
+export function isWasmLoaded(): boolean {
+  return wasmModule !== null;
+}
+
+/**
+ * Execute Luau code.
+ */
+export async function executeCode(code: string): Promise<ExecuteResult> {
+  const module = await loadLuauWasm();
+  
+  try {
+    const resultJson = module.ccall('luau_execute', 'string', ['string'], [code]);
+    if (!resultJson) {
+      return {
+        success: false,
+        output: '',
+        error: 'No result returned from execution',
+      };
+    }
+    const parsed = JSON.parse(resultJson) as ExecuteResult;
+    return parsed;
+  } catch (error) {
+    // Try to extract more info from the error
+    let errorMsg = 'Unknown execution error';
+    if (error instanceof Error) {
+      errorMsg = error.message;
+      if (error.stack) {
+        console.error('[Luau] Execution error stack:', error.stack);
+      }
+    } else if (typeof error === 'number') {
+      // Emscripten exception pointer - this means a C++ exception wasn't caught
+      errorMsg = `Uncaught Luau exception (code: ${error})`;
+    } else {
+      errorMsg = String(error);
+    }
+    
+    return {
+      success: false,
+      output: '',
+      error: errorMsg,
+    };
+  }
+}
+
+/**
+ * Register all files with the analysis engine for cross-file type checking.
+ */
+async function registerAllFilesForAnalysis(): Promise<void> {
+  const allFiles = getAllFiles();
+  const module = await loadLuauWasm();
+  
+  // Register each file's source for analysis
+  for (const [name, content] of Object.entries(allFiles)) {
+    try {
+      module.ccall('luau_set_source', null, ['string', 'string'], [name, content]);
+      
+      // Also register without extension for require resolution
+      const nameWithoutExt = name.replace(/\.(luau|lua)$/, '');
+      if (nameWithoutExt !== name) {
+        module.ccall('luau_set_source', null, ['string', 'string'], [nameWithoutExt, content]);
+      }
+    } catch {
+      // Ignore individual file registration errors
+    }
+  }
+}
+
+/**
+ * Get diagnostics for code.
+ */
+export async function getDiagnostics(code: string): Promise<LuauDiagnostic[]> {
+  const module = await loadLuauWasm();
+  
+  try {
+    // Register all files for cross-file type checking
+    await registerAllFilesForAnalysis();
+    
+    const resultJson = module.ccall('luau_get_diagnostics', 'string', ['string'], [code]);
+    const result = JSON.parse(resultJson) as DiagnosticsResult;
+    return result.diagnostics;
+  } catch (error) {
+    console.error('[Luau] Diagnostics error:', error);
+    return [];
+  }
+}
+
+/**
+ * Get autocomplete suggestions.
+ */
+export async function getAutocomplete(code: string, line: number, col: number): Promise<LuauCompletion[]> {
+  const module = await loadLuauWasm();
+  
+  try {
+    const resultJson = module.ccall('luau_autocomplete', 'string', ['string', 'number', 'number'], [code, line, col]);
+    const result = JSON.parse(resultJson) as AutocompleteResult;
+    return result.items;
+  } catch (error) {
+    console.error('[Luau] Autocomplete error:', error);
+    return [];
+  }
+}
+
+/**
+ * Get hover information.
+ */
+export async function getHover(code: string, line: number, col: number): Promise<string | null> {
+  const module = await loadLuauWasm();
+  
+  try {
+    const resultJson = module.ccall('luau_hover', 'string', ['string', 'number', 'number'], [code, line, col]);
+    const result = JSON.parse(resultJson) as HoverResult;
+    return result.content;
+  } catch (error) {
+    console.error('[Luau] Hover error:', error);
+    return null;
+  }
+}
+
+/**
+ * Add a module that can be required.
+ */
+export async function addModule(name: string, source: string): Promise<void> {
+  const module = await loadLuauWasm();
+  try {
+    module.ccall('luau_add_module', null, ['string', 'string'], [name, source]);
+  } catch (error) {
+    console.error('[Luau] Failed to add module:', error);
+  }
+}
+
+/**
+ * Clear all registered modules.
+ */
+export async function clearModules(): Promise<void> {
+  const module = await loadLuauWasm();
+  try {
+    module.ccall('luau_clear_modules', null, [], []);
+  } catch (error) {
+    console.error('[Luau] Failed to clear modules:', error);
+  }
+}
+
+/**
+ * Get list of available modules for autocomplete.
+ */
+export async function getAvailableModules(): Promise<string[]> {
+  const module = await loadLuauWasm();
+  try {
+    const resultJson = module.ccall('luau_get_modules', 'string', [], []);
+    const result = JSON.parse(resultJson) as { modules: string[] };
+    return result.modules;
+  } catch (error) {
+    console.error('[Luau] Failed to get modules:', error);
+    return [];
+  }
+}
+
+/**
+ * Set source for a file (for analysis).
+ */
+export async function setSource(name: string, source: string): Promise<void> {
+  const module = await loadLuauWasm();
+  try {
+    module.ccall('luau_set_source', null, ['string', 'string'], [name, source]);
+  } catch (error) {
+    console.error('[Luau] Failed to set source:', error);
+  }
+}
+
+/**
+ * Register all files as modules (for require support).
+ */
+async function registerAllModules(): Promise<void> {
+  const allFiles = getAllFiles();
+  const module = await loadLuauWasm();
+  
+  // Clear existing modules first
+  try {
+    module.ccall('luau_clear_modules', null, [], []);
+  } catch {
+    // Ignore clear errors
+  }
+  
+  // Register each file as a module
+  for (const [name, content] of Object.entries(allFiles)) {
+    try {
+      // Register with the file name (with extension)
+      module.ccall('luau_add_module', null, ['string', 'string'], [name, content]);
+      
+      // Also register without extension for convenience
+      const nameWithoutExt = name.replace(/\.(luau|lua)$/, '');
+      if (nameWithoutExt !== name) {
+        module.ccall('luau_add_module', null, ['string', 'string'], [nameWithoutExt, content]);
+      }
+    } catch {
+      // Ignore individual module registration errors
+    }
+  }
+}
+
+/**
+ * Run the active file and display output.
+ */
+export async function runCode(): Promise<void> {
+  setRunning(true);
+  clearOutput();
+  setExecutionTime(null);
+
+  try {
+    const code = getActiveFileContent();
+    const fileName = get(activeFile);
+    
+    appendOutput({ type: 'log', text: `Running ${fileName}...` });
+    
+    // Register all files as modules for require support
+    await registerAllModules();
+    
+    // Measure execution time
+    const startTime = performance.now();
+    const result = await executeCode(code);
+    const endTime = performance.now();
+    const elapsed = endTime - startTime;
+    
+    setExecutionTime(elapsed);
+    
+    if (result.output) {
+      result.output.split('\n').forEach((line) => {
+        appendOutput({ type: 'log', text: line });
+      });
+    }
+    
+    if (!result.success && result.error) {
+      appendOutput({ type: 'error', text: result.error });
+    }
+  } catch (error) {
+    appendOutput({
+      type: 'error',
+      text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  } finally {
+    setRunning(false);
+  }
+}
+
+// ============================================================================
+// Mock Module for Development (when WASM isn't built yet)
+// ============================================================================
+
+function createMockModule(): LuauWasmModule {
+  const mockExecute = (code: string): string => {
+    // Simple mock that extracts print statements
+    const printRegex = /print\s*\(([^)]+)\)/g;
+    const outputs: string[] = [];
+    let match;
+    
+    while ((match = printRegex.exec(code)) !== null) {
+      const args = match[1];
+      // Handle string literals
+      const stringMatch = args.match(/"([^"]*)"|'([^']*)'/);
+      if (stringMatch) {
+        outputs.push(stringMatch[1] || stringMatch[2]);
+      } else {
+        // Handle simple expressions
+        outputs.push(`[${args.trim()}]`);
+      }
+    }
+
+    if (outputs.length === 0) {
+      return JSON.stringify({ 
+        success: true, 
+        output: '[Mock mode - WASM not loaded]\nTip: Build the WASM module with ./wasm/build.sh' 
+      });
+    }
+
+    return JSON.stringify({ success: true, output: outputs.join('\n') });
+  };
+
+  const mockDiagnostics = (): string => {
+    return JSON.stringify({ diagnostics: [] });
+  };
+
+  const mockAutocomplete = (): string => {
+    // Return some basic Luau globals
+    const items: LuauCompletion[] = [
+      { label: 'print', kind: 'function', detail: '(...any) -> ()', deprecated: false },
+      { label: 'pairs', kind: 'function', detail: '<K, V>(t: {[K]: V}) -> ((t: {[K]: V}, k: K?) -> (K, V), {[K]: V}, nil)', deprecated: false },
+      { label: 'ipairs', kind: 'function', detail: '<V>(t: {V}) -> ((t: {V}, i: number) -> (number, V), {V}, number)', deprecated: false },
+      { label: 'type', kind: 'function', detail: '(any) -> string', deprecated: false },
+      { label: 'tostring', kind: 'function', detail: '(any) -> string', deprecated: false },
+      { label: 'tonumber', kind: 'function', detail: '(any, number?) -> number?', deprecated: false },
+      { label: 'local', kind: 'keyword', deprecated: false },
+      { label: 'function', kind: 'keyword', deprecated: false },
+      { label: 'if', kind: 'keyword', deprecated: false },
+      { label: 'then', kind: 'keyword', deprecated: false },
+      { label: 'else', kind: 'keyword', deprecated: false },
+      { label: 'for', kind: 'keyword', deprecated: false },
+      { label: 'while', kind: 'keyword', deprecated: false },
+      { label: 'return', kind: 'keyword', deprecated: false },
+    ];
+    return JSON.stringify({ items });
+  };
+
+  const mockHover = (): string => {
+    return JSON.stringify({ content: null });
+  };
+
+  // Create a mock ccall that routes to the appropriate mock function
+  const ccall = (name: string, _returnType: string | null, _argTypes: string[], args: unknown[]): unknown => {
+    switch (name) {
+      case 'luau_execute':
+        return mockExecute(args[0] as string);
+      case 'luau_compile_check':
+        return JSON.stringify({ success: true, size: 100 });
+      case 'luau_reset':
+        return undefined;
+      case 'luau_add_module':
+        return undefined;
+      case 'luau_clear_modules':
+        return undefined;
+      case 'luau_get_modules':
+        return JSON.stringify({ modules: [] });
+      case 'luau_set_source':
+        return undefined;
+      case 'luau_get_diagnostics':
+        return mockDiagnostics();
+      case 'luau_autocomplete':
+        return mockAutocomplete();
+      case 'luau_hover':
+        return mockHover();
+      case 'luau_signature_help':
+        return JSON.stringify({ signatures: [] });
+      case 'luau_version':
+        return 'mock-1.0.0';
+      default:
+        return '';
+    }
+  };
+
+  return {
+    ccall: ccall as unknown as LuauWasmModule['ccall'],
+    _malloc: () => 0,
+    _free: () => {},
+    UTF8ToString: () => '',
+    stringToUTF8: () => {},
+    lengthBytesUTF8: () => 0,
+  };
+}
+
+// Export types
+export type { LuauDiagnostic, LuauCompletion, ExecuteResult };
