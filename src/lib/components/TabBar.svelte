@@ -3,7 +3,7 @@
   import ConfigPopover from '$lib/components/ConfigPopover.svelte';
   import { files, activeFile, addFile, removeFile, setActiveFile } from '$lib/stores/playground';
   import { toggleTheme, themeMode } from '$lib/utils/theme';
-  import { runCode } from '$lib/luau/wasm';
+  import { runCode, checkCode } from '$lib/luau/wasm';
   import { sharePlayground } from '$lib/utils/share';
 
   let newFileName = $state('');
@@ -21,6 +21,10 @@
 
   function handleRun() {
     runCode();
+  }
+
+  function handleCheck() {
+    checkCode();
   }
 
   async function handleShare() {
@@ -101,6 +105,10 @@
         <span class="hidden sm:inline">Share</span>
         <span class="sm:hidden">↗</span>
       {/if}
+    </Button>
+    <Button size="sm" variant="secondary" onclick={handleCheck} class="px-2 sm:px-3">
+      <span class="hidden sm:inline">Check</span>
+      <span class="sm:hidden">✓</span>
     </Button>
     <Button size="sm" onclick={handleRun} class="px-2 sm:px-3">
       <span class="sm:mr-1">▶</span>

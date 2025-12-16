@@ -385,6 +385,57 @@ export async function runCode(): Promise<void> {
   }
 }
 
+/**
+ * Run type checking on the active file and display diagnostics.
+ */
+export async function checkCode(): Promise<void> {
+  setRunning(true);
+  clearOutput();
+  setExecutionTime(null);
+
+  try {
+    const code = getActiveFileContent();
+    const fileName = get(activeFile);
+    
+    appendOutput({ type: 'log', text: `Type checking ${fileName}...` });
+    
+    // Measure check time
+    const startTime = performance.now();
+    const diagnostics = await getDiagnostics(code);
+    const endTime = performance.now();
+    const elapsed = endTime - startTime;
+    
+    setExecutionTime(elapsed);
+    
+    if (diagnostics.length === 0) {
+      appendOutput({ type: 'log', text: '✓ No type errors found' });
+    } else {
+      const errorCount = diagnostics.filter(d => d.severity === 'error').length;
+      const warningCount = diagnostics.filter(d => d.severity === 'warning').length;
+      
+      const summary = [];
+      if (errorCount > 0) summary.push(`${errorCount} error${errorCount !== 1 ? 's' : ''}`);
+      if (warningCount > 0) summary.push(`${warningCount} warning${warningCount !== 1 ? 's' : ''}`);
+      
+      appendOutput({ type: 'log', text: `Found ${summary.join(', ')}:` });
+      appendOutput({ type: 'log', text: '' });
+      
+      for (const diag of diagnostics) {
+        const location = `${fileName}:${diag.startLine + 1}:${diag.startCol + 1}`;
+        const type = diag.severity === 'error' ? 'error' : diag.severity === 'warning' ? 'warn' : 'log';
+        appendOutput({ type, text: `${location}: ${diag.message}` });
+      }
+    }
+  } catch (error) {
+    appendOutput({
+      type: 'error',
+      text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  } finally {
+    setRunning(false);
+  }
+}
+
 // ============================================================================
 // Mock Module for Development (when WASM isn't built yet)
 // ============================================================================
