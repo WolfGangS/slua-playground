@@ -18,9 +18,10 @@ export interface ShareState {
 }
 
 const CURRENT_VERSION = 1;
+const PLAYGROUND_URL = 'https://play.luau.org';
 
 /**
- * Encode the current state to a URL-safe string.
+ * Encode state to a URL-safe string.
  */
 export function encodeState(state: ShareState): string {
   const json = JSON.stringify(state);
@@ -45,6 +46,36 @@ export function decodeState(encoded: string): ShareState | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Generate a playground URL with encoded state.
+ * This is a pure function that doesn't depend on stores.
+ */
+export function generatePlaygroundUrl(
+  filesData: Record<string, string>,
+  activeFileName: string,
+  baseUrl: string = PLAYGROUND_URL
+): string {
+  const state: ShareState = {
+    files: filesData,
+    active: activeFileName,
+    v: CURRENT_VERSION,
+  };
+  
+  const encoded = encodeState(state);
+  return `${baseUrl}/#code=${encoded}`;
+}
+
+/**
+ * Open the code in the playground in a new tab.
+ */
+export function openInPlayground(
+  filesData: Record<string, string>,
+  activeFileName: string
+): void {
+  const url = generatePlaygroundUrl(filesData, activeFileName);
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 /**

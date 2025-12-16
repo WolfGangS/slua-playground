@@ -1,32 +1,9 @@
 <script lang="ts">
   import { output, isRunning, clearOutput, executionTime } from '$lib/stores/playground';
   import { Button } from '$lib/components/ui/button';
+  import { formatTime, isStackTraceLine, formatStackLine } from '$lib/utils/output';
 
   let isExpanded = $state(true);
-  
-  function formatTime(ms: number): string {
-    if (ms < 1) {
-      return `${(ms * 1000).toFixed(0)}μs`;
-    } else if (ms < 1000) {
-      return `${ms.toFixed(1)}ms`;
-    } else {
-      return `${(ms / 1000).toFixed(2)}s`;
-    }
-  }
-
-  // Check if a line is part of a stack trace
-  function isStackTraceLine(text: string): boolean {
-    return text.startsWith('\t') || text.startsWith('stack traceback:');
-  }
-
-  // Format stack trace line for display
-  function formatStackLine(text: string): string {
-    // Clean up the line - remove leading tab, format nicely
-    if (text.startsWith('\t')) {
-      return text.substring(1); // Remove leading tab
-    }
-    return text;
-  }
 </script>
 
 <div 

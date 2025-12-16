@@ -1,10 +1,9 @@
 import { writable, get } from 'svelte/store';
 import LZString from 'lz-string';
+import type { OutputLine } from '$lib/utils/output';
 
-export interface OutputLine {
-  type: 'log' | 'error' | 'warn';
-  text: string;
-}
+// Re-export for backwards compatibility
+export type { OutputLine };
 
 export interface PlaygroundState {
   files: Record<string, string>;
