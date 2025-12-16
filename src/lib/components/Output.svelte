@@ -13,6 +13,20 @@
       return `${(ms / 1000).toFixed(2)}s`;
     }
   }
+
+  // Check if a line is part of a stack trace
+  function isStackTraceLine(text: string): boolean {
+    return text.startsWith('\t') || text.startsWith('stack traceback:');
+  }
+
+  // Format stack trace line for display
+  function formatStackLine(text: string): string {
+    // Clean up the line - remove leading tab, format nicely
+    if (text.startsWith('\t')) {
+      return text.substring(1); // Remove leading tab
+    }
+    return text;
+  }
 </script>
 
 <div 
@@ -61,13 +75,15 @@
         </span>
       {:else}
         {#each $output as line, i}
+          {@const isStack = line.type === 'error' && isStackTraceLine(line.text)}
           <div 
-            class="py-0.5 leading-relaxed break-all"
-            class:text-[var(--color-error-500)]={line.type === 'error'}
-            class:text-[var(--color-warning-500)]={line.type === 'warn'}
-            class:text-[var(--text-primary)]={line.type === 'log'}
+            class="leading-relaxed break-all
+              {isStack ? 'pl-4 py-0 opacity-80 text-[var(--color-error-400)]' : 'py-0.5'}
+              {line.type === 'error' && !isStack ? 'text-[var(--color-error-500)]' : ''}
+              {line.type === 'warn' ? 'text-[var(--color-warning-500)]' : ''}
+              {line.type === 'log' ? 'text-[var(--text-primary)]' : ''}"
           >
-            {line.text}
+            {isStack ? formatStackLine(line.text) : line.text}
           </div>
         {/each}
       {/if}

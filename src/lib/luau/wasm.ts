@@ -370,7 +370,10 @@ export async function runCode(): Promise<void> {
     }
     
     if (!result.success && result.error) {
-      appendOutput({ type: 'error', text: result.error });
+      // Split error by newlines to format stack traces nicely
+      result.error.split('\n').forEach((line) => {
+        appendOutput({ type: 'error', text: line });
+      });
     }
   } catch (error) {
     appendOutput({
