@@ -155,3 +155,10 @@ body {
   background: var(--color-accent-500);
   content: '';
 }
+
+/* Prevent iOS auto-zoom on focus by ensuring font is at least 16px on mobile */
+@media screen and (max-width: 768px) {
+  .cm-content {
+    font-size: 16px !important;
+  }
+}
