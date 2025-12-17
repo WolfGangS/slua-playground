@@ -67,7 +67,7 @@
 
   <!-- Content -->
   {#if isExpanded}
-    <div class="flex-1 overflow-auto p-2 sm:p-3 font-mono text-xs sm:text-sm min-h-0">
+    <div class="flex-1 overflow-auto p-1 py-0 sm:p-2 sm:py-1 lg:p-3 lg:py-2 font-mono text-xs sm:text-sm min-h-0">
       {#if $output.length === 0}
         <span class="text-[var(--text-muted)] italic">
           Run your code to see output here...
@@ -77,7 +77,7 @@
           {@const isStack = line.type === 'error' && isStackTraceLine(line.text)}
           <div 
             class="leading-relaxed break-all
-              {isStack ? 'pl-4 py-0 opacity-80 text-[var(--color-error-400)]' : 'py-0.5'}
+              {isStack ? 'pl-4 opacity-80 text-[var(--color-error-500)]' : ''}
               {line.type === 'error' && !isStack ? 'text-[var(--color-error-500)]' : ''}
               {line.type === 'warn' ? 'text-[var(--color-warning-500)]' : ''}
               {line.type === 'log' ? 'text-[var(--text-primary)]' : ''}"
