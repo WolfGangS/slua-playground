@@ -808,7 +808,12 @@ EXPORT const char* luau_hover(const char* code, int line, int col) {
     g_frontend->check("main", opts);
     
     Luau::SourceModule* sourceModule = g_frontend->getSourceModule("main");
-    Luau::ModulePtr module = g_frontend->moduleResolverForAutocomplete.getModule("main");
+    
+    // With the new solver, forAutocomplete is disabled internally, so modules
+    // are stored in moduleResolver instead of moduleResolverForAutocomplete
+    Luau::ModulePtr module = g_useNewSolver 
+        ? g_frontend->moduleResolver.getModule("main")
+        : g_frontend->moduleResolverForAutocomplete.getModule("main");
     
     if (!sourceModule || !module) {
         return setResult("{\"content\":null}");
