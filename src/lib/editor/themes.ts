@@ -47,16 +47,16 @@ interface ThemeColors {
   infoBg: string;
 }
 
-// Colors from design system palette
+// Colors from design system palette (using CSS variables for surface colors)
 const darkColors: ThemeColors = {
-  background: "oklch(0.1 0.015 250)",
+  background: "var(--editor-surface-0)",
   foreground: "rgb(238, 239, 241)", // gray-200
   selection: "rgba(112, 160, 255, 0.3)", // blue-500
-  activeLine: "rgb(25, 26, 31)", // gray-1100
+  activeLine: "var(--editor-surface-100)",
   cursor: "rgb(112, 160, 255)", // blue-500
   lineNumber: "rgb(106, 111, 129)", // gray-600
   lineNumberActive: "rgb(188, 190, 200)", // gray-500
-  gutterBackground: "oklch(0.1 0.015 250)",
+  gutterBackground: "var(--editor-surface-0)",
   matchingBracketBg: "rgba(101, 215, 157, 0.2)", // green-400
   matchingBracketOutline: "rgb(101, 215, 157)", // green-400
 
@@ -81,14 +81,14 @@ const darkColors: ThemeColors = {
 };
 
 const lightColors: ThemeColors = {
-  background: "#ffffff",
+  background: "var(--editor-surface-0)",
   foreground: "rgb(39, 41, 48)", // gray-900
   selection: "rgba(0, 45, 214, 0.15)", // blue-1000
-  activeLine: "rgb(247, 247, 248)", // gray-100
+  activeLine: "var(--editor-surface-100)",
   cursor: "rgb(0, 45, 214)", // blue-1000
   lineNumber: "rgb(106, 111, 129)", // gray-600
   lineNumberActive: "rgb(39, 41, 48)", // gray-900
-  gutterBackground: "#ffffff",
+  gutterBackground: "var(--editor-surface-0)",
   matchingBracketBg: "rgba(2, 114, 64, 0.15)", // green-900
   matchingBracketOutline: "rgb(2, 114, 64)", // green-900
 
@@ -149,10 +149,17 @@ function createTheme(colors: ThemeColors, isDark: boolean): Extension {
           borderRight: "none",
         },
         ".cm-activeLineGutter": {
+          backgroundColor: "transparent",
+          color: colors.lineNumber,
+        },
+        "&.cm-focused .cm-activeLineGutter": {
           backgroundColor: colors.activeLine,
           color: colors.lineNumberActive,
         },
         ".cm-activeLine": {
+          backgroundColor: "transparent",
+        },
+        "&.cm-focused .cm-activeLine": {
           backgroundColor: colors.activeLine,
         },
         ".cm-line": {
@@ -166,7 +173,7 @@ function createTheme(colors: ThemeColors, isDark: boolean): Extension {
         // Tooltip styling
         ".cm-tooltip": {
           backgroundColor: "var(--bg-secondary)",
-          border: "1px solid var(--bg-tertiary)",
+          border: "1px solid var(--border-color)",
           boxShadow: "none",
           borderRadius: "4px",
           overflow: "hidden",

@@ -17,8 +17,9 @@
     if (!mounted) {
       mounted = true;
       
-      // In embed mode, apply the embed theme
+      // In embed mode, apply the embed theme and add body class
       if ($isEmbed) {
+        document.body.classList.add('embed-mode');
         const theme = $embedTheme;
         if (theme === 'light' || theme === 'dark') {
           setTheme(theme);
