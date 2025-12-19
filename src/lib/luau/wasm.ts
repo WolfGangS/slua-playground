@@ -545,8 +545,9 @@ function createMockModule(): LuauWasmModule {
  */
 export async function getBytecode(
   code: string,
-  optimizationLevel: number = 1,
-  debugLevel: number = 1,
+  optimizationLevel: number = 2,
+  debugLevel: number = 2,
+  outputFormat: number = 0,
   showRemarks: boolean = false
 ): Promise<{ success: boolean; bytecode: string; error?: string }> {
   const module = await loadLuauWasm();
@@ -555,8 +556,8 @@ export async function getBytecode(
     const resultJson = module.ccall(
       'luau_dump_bytecode',
       'string',
-      ['string', 'number', 'number', 'number'],
-      [code, optimizationLevel, debugLevel, showRemarks ? 1 : 0]
+      ['string', 'number', 'number', 'number', 'number'],
+      [code, optimizationLevel, debugLevel, outputFormat, showRemarks ? 1 : 0]
     );
     return JSON.parse(resultJson);
   } catch (error) {
