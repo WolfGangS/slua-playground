@@ -19,6 +19,7 @@
 #include "Luau/Autocomplete.h"
 #include "Luau/BuiltinDefinitions.h"
 #include "Luau/BytecodeBuilder.h"
+#include "Luau/CodeGen.h"
 #include "Luau/Common.h"
 #include "Luau/Compiler.h"
 #include "Luau/Config.h"
@@ -286,6 +287,28 @@ static void registerPlaygroundGlobals(lua_State* L) {
     lua_setglobal(L, "require");
 }
 
+static std::string getCodegenAssembly(
+    const char* name,
+    const std::string& bytecode,
+    Luau::CodeGen::AssemblyOptions options,
+    Luau::CodeGen::LoweringStats* stats
+) {
+    std::unique_ptr<lua_State, void (*)(lua_State*)> globalState(luaL_newstate(), lua_close);
+    lua_State* L = globalState.get();
+
+    if (luau_load(L, name, bytecode.data(), bytecode.size(), 0) == 0)
+        return Luau::CodeGen::getAssembly(L, -1, options, stats);
+
+    return "Error loading bytecode";
+}
+
+static void annotateInstruction(void* context, std::string& text, int fid, int instpos)
+{
+    Luau::BytecodeBuilder& bcb = *(Luau::BytecodeBuilder*)context;
+
+    bcb.annotateInstruction(text, fid, instpos);
+}
+
 /**
  * Add a module that can be required.
  * Call this before luau_execute to set up modules.
@@ -417,12 +440,13 @@ EXPORT const char* luau_compile_check(const char* code) {
 /**
  * Dump bytecode as human-readable text.
  * @param code The Luau source code
- * @param optimizationLevel 0-2 (default 1)
- * @param debugLevel 0-2 (default 1)
+ * @param optimizationLevel 0-2 (default 2)
+ * @param debugLevel 0-2 (default 2)
+ * @param outputFormat 0-3 (VM, IR, x64, arm64)
  * @param showRemarks Whether to include compiler remarks
  * Returns: { "success": bool, "bytecode": string, "error": string? }
  */
-EXPORT const char* luau_dump_bytecode(const char* code, int optimizationLevel, int debugLevel, bool showRemarks) {
+EXPORT const char* luau_dump_bytecode(const char* code, int optimizationLevel, int debugLevel, int outputFormat, bool showRemarks) {
     try {
         Luau::CompileOptions options;
         options.optimizationLevel = std::max(0, std::min(2, optimizationLevel));
@@ -436,7 +460,7 @@ EXPORT const char* luau_dump_bytecode(const char* code, int optimizationLevel, i
         if (showRemarks) {
             dumpFlags |= Luau::BytecodeBuilder::Dump_Remarks;
         }
-        
+
         Luau::BytecodeBuilder bytecode;
         bytecode.setDumpFlags(dumpFlags);
         bytecode.setDumpSource(code);
@@ -446,8 +470,50 @@ EXPORT const char* luau_dump_bytecode(const char* code, int optimizationLevel, i
         
         Luau::compileOrThrow(bytecode, std::string(code), options, parseOptions);
         
-        std::string dump = bytecode.dumpEverything();
-        
+        Luau::CodeGen::AssemblyOptions asmOptions;
+        asmOptions.annotator = annotateInstruction;
+        asmOptions.annotatorContext = &bytecode;
+
+        std::string dump;
+
+        switch (outputFormat)
+        {
+        case 0:
+            dump = bytecode.dumpEverything();
+            break;
+        case 1:
+            // Use X64_SystemV for IR since we're in WASM (Host won't work)
+            asmOptions.target = Luau::CodeGen::AssemblyOptions::X64_SystemV;
+            asmOptions.outputBinary = false;
+            asmOptions.includeAssembly = false;
+            asmOptions.includeIr = true;
+            asmOptions.includeIrTypes = false;
+            asmOptions.includeOutlinedCode = false;
+            dump = getCodegenAssembly("main", bytecode.getBytecode(), asmOptions, nullptr);
+            break;
+        case 2:
+            asmOptions.target = Luau::CodeGen::AssemblyOptions::X64_SystemV;
+            asmOptions.outputBinary = false;
+            asmOptions.includeAssembly = true;
+            asmOptions.includeIr = true;
+            asmOptions.includeIrTypes = false;
+            asmOptions.includeOutlinedCode = false;
+            dump = getCodegenAssembly("main", bytecode.getBytecode(), asmOptions, nullptr);
+            break;
+        case 3:
+            asmOptions.target = Luau::CodeGen::AssemblyOptions::A64;
+            asmOptions.outputBinary = false;
+            asmOptions.includeAssembly = true;
+            asmOptions.includeIr = true;
+            asmOptions.includeIrTypes = false;
+            asmOptions.includeOutlinedCode = false;
+            dump = getCodegenAssembly("main", bytecode.getBytecode(), asmOptions, nullptr);
+            break;
+
+        default:
+            break;
+        }
+
         std::ostringstream result;
         result << "{\"success\":true,\"bytecode\":" << json::string(dump) << "}";
         return setResult(result.str());

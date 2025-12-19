@@ -5,6 +5,7 @@ export type LuauMode = 'strict' | 'nonstrict' | 'nocheck';
 export type SolverMode = 'new' | 'old';
 export type OptimizationLevel = 0 | 1 | 2;
 export type DebugLevel = 0 | 1 | 2;
+export type OutputFormat = 0 | 1 | 2 | 3;
 
 export interface PlaygroundSettings {
   // Type checking
@@ -13,6 +14,7 @@ export interface PlaygroundSettings {
   // Compiler options
   optimizationLevel: OptimizationLevel;
   debugLevel: DebugLevel;
+  outputFormat: OutputFormat;
   compilerRemarks: boolean;
 }
 
@@ -23,6 +25,7 @@ const defaultSettings: PlaygroundSettings = {
   solver: 'new',
   optimizationLevel: 1,
   debugLevel: 1,
+  outputFormat: 0,
   compilerRemarks: false,
 };
 
@@ -68,6 +71,7 @@ function loadSettingsFromStorage(): PlaygroundSettings {
         solver: parsed.solver ?? defaultSettings.solver,
         optimizationLevel: parsed.optimizationLevel ?? defaultSettings.optimizationLevel,
         debugLevel: parsed.debugLevel ?? defaultSettings.debugLevel,
+        outputFormat: parsed.outputFormat ?? defaultSettings.outputFormat,
         compilerRemarks: parsed.compilerRemarks ?? defaultSettings.compilerRemarks,
       };
     }
@@ -84,6 +88,7 @@ function mergeSettings(partial: Partial<PlaygroundSettings>): PlaygroundSettings
     solver: partial.solver ?? defaultSettings.solver,
     optimizationLevel: partial.optimizationLevel ?? defaultSettings.optimizationLevel,
     debugLevel: partial.debugLevel ?? defaultSettings.debugLevel,
+    outputFormat: partial.outputFormat ?? defaultSettings.outputFormat,
     compilerRemarks: partial.compilerRemarks ?? defaultSettings.compilerRemarks,
   };
 }
@@ -143,6 +148,10 @@ export function setOptimizationLevel(level: OptimizationLevel): void {
 
 export function setDebugLevel(level: DebugLevel): void {
   settings.update((s) => ({ ...s, debugLevel: level }));
+}
+
+export function setOutputFormat(level: OutputFormat): void {
+  settings.update((s) => ({ ...s, outputFormat: level }));
 }
 
 export function setCompilerRemarks(enabled: boolean): void {

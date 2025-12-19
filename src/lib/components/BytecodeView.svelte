@@ -29,7 +29,7 @@
     if ($showBytecode) {
       const code = $files[$activeFile] || '';
       const opts = $settings;
-      refreshBytecode(code, opts.optimizationLevel, opts.debugLevel, opts.compilerRemarks);
+      refreshBytecode(code, opts.optimizationLevel, opts.debugLevel, opts.compilerRemarks, opts.outputFormat);
     }
   });
 
@@ -96,13 +96,14 @@
     code: string,
     optimizationLevel: number,
     debugLevel: number,
-    showRemarks: boolean
+    showRemarks: boolean,
+    outputFormat: number
   ) {
     isLoading = true;
     error = null;
     
     try {
-      const result = await getBytecode(code, optimizationLevel, debugLevel, showRemarks);
+      const result = await getBytecode(code, optimizationLevel, debugLevel, outputFormat, showRemarks);
       if (result.success) {
         bytecodeContent = result.bytecode;
         parsedFunctions = parseBytecode(result.bytecode);

@@ -7,10 +7,12 @@
     setOptimizationLevel,
     setDebugLevel,
     setCompilerRemarks,
+    setOutputFormat,
     type LuauMode, 
     type SolverMode,
     type OptimizationLevel,
-    type DebugLevel
+    type DebugLevel,
+    type OutputFormat
   } from '$lib/stores/settings';
   import { Button } from '$lib/components/ui/button';
   import { Icon } from '$lib/icons';
@@ -39,6 +41,13 @@
     { value: 0, label: 'None', description: 'No debug info' },
     { value: 1, label: 'Lines', description: 'Line info & names' },
     { value: 2, label: 'Full', description: 'Full debug info' },
+  ];
+
+  const outputFormat: { value: OutputFormat; label: string; description: string }[] = [
+    { value: 0, label: 'VM', description: 'VM bytecode' },
+    { value: 1, label: 'IR', description: 'IR bytecode' },
+    { value: 2, label: 'x64', description: 'x64 native code' },
+    { value: 3, label: 'arm64', description: 'arm64 native code' },
   ];
 
   function handleModeChange(mode: LuauMode) {
@@ -160,6 +169,27 @@
                       : 'hover:bg-[var(--bg-tertiary)] border-transparent text-[var(--text-secondary)]'}"
                   title={option.description}
                   onclick={() => setDebugLevel(option.value)}
+                >
+                  {option.label}
+                </button>
+              {/each}
+            </div>
+          </div>
+
+          <!-- Output Format -->
+          <div class="space-y-1.5">
+            <span class="text-xs text-[var(--text-muted)]">Output Format</span>
+            <div class="flex gap-1">
+              {#each outputFormat as option}
+                {@const isSelected = $settings.outputFormat === option.value}
+                <button
+                  type="button"
+                  class="flex-1 px-2 py-1.5 text-xs rounded-md transition-colors border
+                    {isSelected 
+                      ? 'bg-[var(--bg-tertiary)] border-[var(--accent)] text-[var(--text-primary)]' 
+                      : 'hover:bg-[var(--bg-tertiary)] border-transparent text-[var(--text-secondary)]'}"
+                  title={option.description}
+                  onclick={() => setOutputFormat(option.value)}
                 >
                   {option.label}
                 </button>
