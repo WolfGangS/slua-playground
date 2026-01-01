@@ -350,7 +350,8 @@ body {
 
 /* Prevent iOS auto-zoom on focus by ensuring font is at least 16px on mobile (except in embed mode) */
 @media screen and (max-width: 768px) {
-  body:not(.embed-mode) .cm-content {
+  body:not(.embed-mode) .cm-content,
+  body:not(.embed-mode) .cm-gutters {
     font-size: 16px !important;
   }
 }
