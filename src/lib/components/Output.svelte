@@ -22,15 +22,52 @@
   // In embed mode, hide entirely until first run
   const shouldShow = $derived(!$isEmbed || hasEverRun);
   
-  // Smaller height in embed mode, but ensure minimum height for content visibility
-  const expandedHeight = $derived($isEmbed ? 'max(100px, min(120px, 30vh))' : 'max(120px, min(200px, 40vh))');
+  // Resizable height state
+  const defaultHeight = $isEmbed ? 120 : 200;
+  const minHeight = 80;
+  const maxHeight = typeof window !== 'undefined' ? window.innerHeight * 0.7 : 500;
+  let outputHeight = $state(defaultHeight);
+  let isResizing = $state(false);
+  
+  function handleResizeStart(e: MouseEvent) {
+    if (!isExpanded) return;
+    e.preventDefault();
+    isResizing = true;
+    const startY = e.clientY;
+    const startHeight = outputHeight;
+    
+    function onMouseMove(e: MouseEvent) {
+      const delta = startY - e.clientY;
+      const newHeight = Math.min(maxHeight, Math.max(minHeight, startHeight + delta));
+      outputHeight = newHeight;
+    }
+    
+    function onMouseUp() {
+      isResizing = false;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    }
+    
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
 </script>
 
 {#if shouldShow}
 <div 
-  class="flex flex-col border-t border-(--border-color) bg-(--bg-secondary) transition-[height] duration-200"
-  style="height: {isExpanded ? expandedHeight : '32px'}"
+  class="relative flex flex-col border-t border-(--border-color) bg-(--bg-secondary)"
+  class:transitioning={!isResizing}
+  style="height: {isExpanded ? `${outputHeight}px` : '32px'}"
 >
+  {#if isExpanded}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div 
+      class="resize-handle"
+      class:resizing={isResizing}
+      onmousedown={handleResizeStart}
+    ></div>
+  {/if}
+  
   <!-- Header -->
   <div class="flex items-center justify-between px-2 sm:px-3 py-1.5 border-b border-(--border-color) bg-(--bg-tertiary) shrink-0">
     <button 
@@ -101,3 +138,44 @@
   {/if}
 </div>
 {/if}
+
+<style>
+  .transitioning {
+    transition: height 200ms ease;
+  }
+  
+  .resize-handle {
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+    z-index: 10;
+    background: transparent;
+  }
+  
+  .resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border-color);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+  
+  .resize-handle:hover::after,
+  .resize-handle.resizing::after {
+    opacity: 1;
+  }
+  
+  .resize-handle.resizing {
+    background: linear-gradient(to bottom, var(--accent) 0%, transparent 100%);
+    opacity: 0.3;
+  }
+</style>
