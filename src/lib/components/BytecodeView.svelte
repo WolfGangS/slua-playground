@@ -116,7 +116,12 @@
             .replace(/\b(L\d+)\b/g, '<span class="hl-label">$1</span>');
           result += highlightedOperands;
           if (comment) {
-            result += `<span class="hl-comment"> [${comment}]</span>`;
+            // Highlight string literals in comments (e.g., 'Hello')
+            const highlightedComment = comment.replace(
+              /^'(.+)'$/,
+              '<span class="hl-string">\'$1\'</span>'
+            );
+            result += `<span class="hl-comment"> [</span>${highlightedComment}<span class="hl-comment">]</span>`;
           }
           return result;
         }
@@ -263,48 +268,54 @@
 {/if}
 
 <style>
-  /* Light mode colors */
+  /* 
+   * Syntax colors matching the editor theme (from themes.ts)
+   * Light mode uses *-1000/*-900 colors, dark mode uses *-400/*-500 colors
+   */
   .bytecode-view {
-    --hl-keyword: oklch(0.45 0.2 25);
-    --hl-func: oklch(0.45 0.2 25);
-    --hl-opcode: oklch(0.45 0.18 85);
-    --hl-register: oklch(0.45 0.22 250);
-    --hl-constant: oklch(0.45 0.18 145);
-    --hl-comment: oklch(0.5 0.05 250);
-    --hl-linenum: oklch(0.55 0.02 250);
-    --hl-label: oklch(0.5 0.22 30);
-    --hl-number: oklch(0.45 0.15 145);
-    --hl-block: oklch(0.4 0.15 280);
-    --hl-type: oklch(0.45 0.15 180);
-    --hl-ir-prefix: oklch(0.55 0.08 280);
-    --hl-ir-var: oklch(0.45 0.15 200);
-    --hl-ir-op: oklch(0.42 0.12 250);
-    --hl-ir-args: oklch(0.5 0.08 250);
-    --hl-asm-op: oklch(0.4 0.15 260);
-    --hl-asm-args: oklch(0.5 0.08 250);
-    --hl-highlight-bg: oklch(0.92 0.05 90);
+    /* Light mode - matches lightColors from themes.ts */
+    --hl-keyword: rgb(0, 45, 214);       /* blue-1000 */
+    --hl-func: rgb(190, 26, 97);         /* carmine-900 */
+    --hl-opcode: rgb(0, 45, 214);        /* blue-1000 (keyword) */
+    --hl-register: rgb(0, 53, 245);      /* blue-900 (type) */
+    --hl-constant: rgb(108, 33, 198);    /* purple-1000 (number) */
+    --hl-string: rgb(2, 114, 64);        /* green-900 */
+    --hl-comment: rgb(106, 111, 129);    /* gray-600 */
+    --hl-linenum: rgb(106, 111, 129);    /* gray-600 */
+    --hl-label: rgb(190, 26, 97);        /* carmine-900 (function) */
+    --hl-number: rgb(108, 33, 198);      /* purple-1000 */
+    --hl-block: rgb(190, 26, 97);        /* carmine-900 (function) */
+    --hl-type: rgb(0, 53, 245);          /* blue-900 */
+    --hl-ir-prefix: rgb(106, 111, 129);  /* gray-600 (comment) */
+    --hl-ir-var: rgb(108, 33, 198);      /* purple-1000 (number) */
+    --hl-ir-op: rgb(0, 45, 214);         /* blue-1000 (keyword) */
+    --hl-ir-args: rgb(39, 41, 48);       /* gray-900 (variable) */
+    --hl-asm-op: rgb(0, 45, 214);        /* blue-1000 (keyword) */
+    --hl-asm-args: rgb(39, 41, 48);      /* gray-900 (variable) */
+    --hl-highlight-bg: rgba(0, 45, 214, 0.08); /* blue-1000 with low opacity */
   }
 
-  /* Dark mode colors */
+  /* Dark mode - matches darkColors from themes.ts */
   :global(.dark) .bytecode-view {
-    --hl-keyword: oklch(0.7 0.18 25);
-    --hl-func: oklch(0.7 0.18 25);
-    --hl-opcode: oklch(0.78 0.15 85);
-    --hl-register: oklch(0.72 0.18 250);
-    --hl-constant: oklch(0.7 0.15 145);
-    --hl-comment: oklch(0.55 0.02 250);
-    --hl-linenum: oklch(0.5 0.02 250);
-    --hl-label: oklch(0.68 0.2 30);
-    --hl-number: oklch(0.7 0.12 145);
-    --hl-block: oklch(0.7 0.12 280);
-    --hl-type: oklch(0.65 0.12 180);
-    --hl-ir-prefix: oklch(0.5 0.06 280);
-    --hl-ir-var: oklch(0.65 0.12 200);
-    --hl-ir-op: oklch(0.68 0.1 250);
-    --hl-ir-args: oklch(0.58 0.06 250);
-    --hl-asm-op: oklch(0.72 0.12 260);
-    --hl-asm-args: oklch(0.58 0.06 250);
-    --hl-highlight-bg: oklch(0.3 0.05 90);
+    --hl-keyword: rgb(112, 160, 255);    /* blue-500 */
+    --hl-func: rgb(255, 155, 192);       /* carmine-400 */
+    --hl-opcode: rgb(112, 160, 255);     /* blue-500 (keyword) */
+    --hl-register: rgb(143, 180, 255);   /* blue-400 (type) */
+    --hl-constant: rgb(197, 156, 249);   /* purple-500 (number) */
+    --hl-string: rgb(101, 215, 157);     /* green-400 */
+    --hl-comment: rgb(106, 111, 129);    /* gray-600 */
+    --hl-linenum: rgb(106, 111, 129);    /* gray-600 */
+    --hl-label: rgb(255, 155, 192);      /* carmine-400 (function) */
+    --hl-number: rgb(197, 156, 249);     /* purple-500 */
+    --hl-block: rgb(255, 155, 192);      /* carmine-400 (function) */
+    --hl-type: rgb(143, 180, 255);       /* blue-400 */
+    --hl-ir-prefix: rgb(106, 111, 129);  /* gray-600 (comment) */
+    --hl-ir-var: rgb(197, 156, 249);     /* purple-500 (number) */
+    --hl-ir-op: rgb(112, 160, 255);      /* blue-500 (keyword) */
+    --hl-ir-args: rgb(230, 231, 234);    /* gray-300 (variable) */
+    --hl-asm-op: rgb(112, 160, 255);     /* blue-500 (keyword) */
+    --hl-asm-args: rgb(230, 231, 234);   /* gray-300 (variable) */
+    --hl-highlight-bg: rgba(112, 160, 255, 0.15); /* blue-500 with low opacity */
   }
 
   .bytecode-content {
@@ -346,6 +357,10 @@
 
   :global(.hl-constant) {
     color: var(--hl-constant);
+  }
+
+  :global(.hl-string) {
+    color: var(--hl-string);
   }
 
   :global(.hl-comment) {
