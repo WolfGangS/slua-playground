@@ -29,5 +29,5 @@
   });
 </script>
 
-<div class="h-full w-full bg-[var(--bg-editor)]" bind:this={editorContainer}></div>
+<div class="h-full w-full bg-(--bg-editor)" bind:this={editorContainer}></div>
 

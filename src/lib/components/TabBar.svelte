@@ -106,9 +106,9 @@
   }
 </script>
 
-<header class="relative flex items-end gap-1 px-2 pt-1.5 pb-0 bg-[var(--bg-secondary)] min-h-[44px]">
+<header class="relative flex items-end gap-1 px-2 pt-1.5 pb-0 bg-(--bg-secondary) min-h-[44px]">
   <!-- Bottom border line -->
-  <div class="absolute bottom-0 left-0 right-0 h-px bg-[var(--border-color)]"></div>
+  <div class="absolute bottom-0 left-0 right-0 h-px bg-(--border-color)"></div>
   
   <!-- File tabs - scrollable on mobile -->
   <div class="flex items-end gap-0.5 flex-1 overflow-x-auto scrollbar-hide">
@@ -116,8 +116,8 @@
       <div
         class="group relative flex items-center gap-1 px-2 sm:px-3 py-1.5 text-sm leading-5 rounded-t-md transition-colors cursor-pointer shrink-0 select-none border-t border-x
           {$activeFile === fileName 
-            ? 'bg-[var(--bg-editor)] text-[var(--text-primary)] border-[var(--border-color)] z-10 -mb-px' 
-            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] border-transparent -mb-px'}"
+            ? 'bg-(--bg-editor) text-(--text-primary) border-(--border-color) z-10 -mb-px' 
+            : 'text-(--text-secondary) hover:bg-(--bg-tertiary) border-transparent -mb-px'}"
         role="button"
         tabindex="0"
         onclick={() => editingFileName !== fileName && setActiveFile(fileName)}
@@ -130,7 +130,7 @@
         {#if editingFileName === fileName}
           <input
             type="text"
-            class="w-20 sm:w-24 text-sm bg-transparent text-inherit focus:outline-none caret-[var(--accent)]"
+            class="w-20 sm:w-24 text-sm bg-transparent text-inherit focus:outline-none caret-(--accent)"
             bind:value={editValue}
             use:focusInput
             onblur={() => finishEditing(fileName)}
@@ -148,7 +148,7 @@
         {/if}
         {#if Object.keys($files).length > 1 && !$isEmbed && editingFileName !== fileName}
           <button
-            class="opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-[var(--color-error-500)] ml-1 p-1 -m-1"
+            class="opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-error-500 ml-1 p-1 -m-1"
             onclick={(e) => { e.stopPropagation(); removeFile(fileName); }}
             aria-label="Close tab"
           >
@@ -163,8 +163,8 @@
       <div
         class="group relative flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 text-sm leading-5 rounded-t-md transition-colors cursor-pointer shrink-0 border-t border-x
           {isCreatingFile 
-            ? 'bg-[var(--bg-editor)] text-[var(--text-primary)] border-[var(--border-color)] z-10 -mb-px' 
-            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] border-transparent -mb-px'}"
+            ? 'bg-(--bg-editor) text-(--text-primary) border-(--border-color) z-10 -mb-px' 
+            : 'text-(--text-secondary) hover:bg-(--bg-tertiary) border-transparent -mb-px'}"
         role="button"
         tabindex="0"
         onclick={(e) => { e.stopPropagation(); startCreatingFile(); }}
@@ -173,7 +173,7 @@
         {#if isCreatingFile}
           <input
             type="text"
-            class="w-20 sm:w-24 text-sm bg-transparent text-inherit placeholder:opacity-50 focus:outline-none caret-[var(--accent)]"
+            class="w-20 sm:w-24 text-sm bg-transparent text-inherit placeholder:opacity-50 focus:outline-none caret-(--accent)"
             placeholder="filename"
             bind:value={newFileName}
             use:focusInput

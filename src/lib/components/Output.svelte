@@ -27,13 +27,13 @@
 
 {#if shouldShow}
 <div 
-  class="flex flex-col border-t border-[var(--border-color)] bg-[var(--bg-secondary)] transition-[height] duration-200"
+  class="flex flex-col border-t border-(--border-color) bg-(--bg-secondary) transition-[height] duration-200"
   style="height: {isExpanded ? expandedHeight : '32px'}"
 >
   <!-- Header -->
-  <div class="flex items-center justify-between px-2 sm:px-3 py-1.5 border-b border-[var(--border-color)] bg-[var(--bg-tertiary)] shrink-0">
+  <div class="flex items-center justify-between px-2 sm:px-3 py-1.5 border-b border-(--border-color) bg-(--bg-tertiary) shrink-0">
     <button 
-      class="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+      class="flex items-center gap-2 text-sm font-medium text-(--text-secondary) hover:text-(--text-primary) transition-colors"
       onclick={() => isExpanded = !isExpanded}
     >
       <span 
@@ -44,14 +44,14 @@
       </span>
       <span>Output</span>
       {#if $isRunning}
-        <span class="animate-pulse text-[var(--accent)]">●</span>
+        <span class="animate-pulse text-(--accent)">●</span>
       {:else if $executionTime !== null}
-        <span class="text-xs text-[var(--text-muted)] font-mono">
+        <span class="text-xs text-(--text-muted) font-mono">
           {formatTime($executionTime)}
         </span>
       {/if}
       {#if !isExpanded && $output.length > 0}
-        <span class="text-xs text-[var(--text-muted)]">
+        <span class="text-xs text-(--text-muted)">
           ({$output.length} line{$output.length !== 1 ? 's' : ''})
         </span>
       {/if}
@@ -70,7 +70,7 @@
   {#if isExpanded}
     <div class="flex-1 overflow-auto p-1 py-0 sm:p-2 sm:py-1 lg:p-3 lg:py-2 font-mono text-xs sm:text-sm min-h-0">
       {#if $output.length === 0}
-        <span class="text-[var(--text-muted)] italic">
+        <span class="text-(--text-muted) italic">
           Run your code to see output here...
         </span>
       {:else}
@@ -78,10 +78,10 @@
           {@const isStack = line.type === 'error' && isStackTraceLine(line.text)}
           <div 
             class="leading-relaxed break-all
-              {isStack ? 'pl-4 opacity-80 text-[var(--color-error-500)]' : ''}
-              {line.type === 'error' && !isStack ? 'text-[var(--color-error-500)]' : ''}
-              {line.type === 'warn' ? 'text-[var(--color-warning-500)]' : ''}
-              {line.type === 'log' ? 'text-[var(--text-primary)]' : ''}"
+              {isStack ? 'pl-4 opacity-80 text-error-500' : ''}
+              {line.type === 'error' && !isStack ? 'text-error-500' : ''}
+              {line.type === 'warn' ? 'text-warning-500' : ''}
+              {line.type === 'log' ? 'text-(--text-primary)' : ''}"
           >
             {isStack ? formatStackLine(line.text) : line.text}
           </div>

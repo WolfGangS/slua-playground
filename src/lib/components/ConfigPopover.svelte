@@ -72,23 +72,23 @@
   
   <Popover.Portal>
     <Popover.Content
-      class="config-popover z-50 w-80 max-h-[80vh] overflow-y-auto rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] p-4 shadow-xl"
+      class="config-popover z-50 w-80 max-h-[80vh] overflow-y-auto rounded-lg border border-(--border-color) bg-(--bg-secondary) p-4 shadow-xl"
       sideOffset={8}
       align="end"
     >
       <div class="space-y-4">
         <div>
-          <h3 class="text-sm font-semibold text-[var(--text-primary)] mb-1">Settings</h3>
-          <p class="text-xs text-[var(--text-muted)]">Configure type checking and compiler</p>
+          <h3 class="text-sm font-semibold text-(--text-primary) mb-1">Settings</h3>
+          <p class="text-xs text-(--text-muted)">Configure type checking and compiler</p>
         </div>
 
         <!-- Type Checking Section -->
         <div class="space-y-3">
-          <span class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Type Checking</span>
+          <span class="text-xs font-semibold text-(--text-secondary) uppercase tracking-wide">Type Checking</span>
           
           <!-- Mode Selection -->
           <div class="space-y-1.5">
-            <span class="text-xs text-[var(--text-muted)]">Mode</span>
+            <span class="text-xs text-(--text-muted)">Mode</span>
             <div class="flex gap-1">
               {#each modeOptions as option}
                 {@const isSelected = $settings.mode === option.value}
@@ -96,8 +96,8 @@
                   type="button"
                   class="flex-1 px-2 py-1.5 text-xs rounded-md transition-colors border
                     {isSelected 
-                      ? 'bg-[var(--bg-tertiary)] border-[var(--accent)] text-[var(--text-primary)]' 
-                      : 'hover:bg-[var(--bg-tertiary)] border-transparent text-[var(--text-secondary)]'}"
+                      ? 'bg-(--bg-tertiary) border-(--accent) text-(--text-primary)' 
+                      : 'hover:bg-(--bg-tertiary) border-transparent text-(--text-secondary)'}"
                   title={option.description}
                   onclick={() => handleModeChange(option.value)}
                 >
@@ -109,7 +109,7 @@
 
           <!-- Solver Selection -->
           <div class="space-y-1.5">
-            <span class="text-xs text-[var(--text-muted)]">Solver</span>
+            <span class="text-xs text-(--text-muted)">Solver</span>
             <div class="flex gap-1">
               {#each solverOptions as option}
                 {@const isSelected = $settings.solver === option.value}
@@ -117,8 +117,8 @@
                   type="button"
                   class="flex-1 px-2 py-1.5 text-xs rounded-md transition-colors border
                     {isSelected 
-                      ? 'bg-[var(--bg-tertiary)] border-[var(--accent)] text-[var(--text-primary)]' 
-                      : 'hover:bg-[var(--bg-tertiary)] border-transparent text-[var(--text-secondary)]'}"
+                      ? 'bg-(--bg-tertiary) border-(--accent) text-(--text-primary)' 
+                      : 'hover:bg-(--bg-tertiary) border-transparent text-(--text-secondary)'}"
                   onclick={() => handleSolverChange(option.value)}
                 >
                   {option.label}
@@ -128,15 +128,15 @@
           </div>
         </div>
 
-        <div class="border-t border-[var(--border-color)]"></div>
+        <div class="border-t border-(--border-color)"></div>
 
         <!-- Compiler Section -->
         <div class="space-y-3">
-          <span class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Compiler</span>
+          <span class="text-xs font-semibold text-(--text-secondary) uppercase tracking-wide">Compiler</span>
           
           <!-- Optimization Level -->
           <div class="space-y-1.5">
-            <span class="text-xs text-[var(--text-muted)]">Optimization</span>
+            <span class="text-xs text-(--text-muted)">Optimization</span>
             <div class="flex gap-1">
               {#each optimizationOptions as option}
                 {@const isSelected = $settings.optimizationLevel === option.value}
@@ -144,8 +144,8 @@
                   type="button"
                   class="flex-1 px-2 py-1.5 text-xs rounded-md transition-colors border
                     {isSelected 
-                      ? 'bg-[var(--bg-tertiary)] border-[var(--accent)] text-[var(--text-primary)]' 
-                      : 'hover:bg-[var(--bg-tertiary)] border-transparent text-[var(--text-secondary)]'}"
+                      ? 'bg-(--bg-tertiary) border-(--accent) text-(--text-primary)' 
+                      : 'hover:bg-(--bg-tertiary) border-transparent text-(--text-secondary)'}"
                   title={option.description}
                   onclick={() => setOptimizationLevel(option.value)}
                 >
@@ -157,7 +157,7 @@
 
           <!-- Debug Level -->
           <div class="space-y-1.5">
-            <span class="text-xs text-[var(--text-muted)]">Debug Info</span>
+            <span class="text-xs text-(--text-muted)">Debug Info</span>
             <div class="flex gap-1">
               {#each debugOptions as option}
                 {@const isSelected = $settings.debugLevel === option.value}
@@ -165,8 +165,8 @@
                   type="button"
                   class="flex-1 px-2 py-1.5 text-xs rounded-md transition-colors border
                     {isSelected 
-                      ? 'bg-[var(--bg-tertiary)] border-[var(--accent)] text-[var(--text-primary)]' 
-                      : 'hover:bg-[var(--bg-tertiary)] border-transparent text-[var(--text-secondary)]'}"
+                      ? 'bg-(--bg-tertiary) border-(--accent) text-(--text-primary)' 
+                      : 'hover:bg-(--bg-tertiary) border-transparent text-(--text-secondary)'}"
                   title={option.description}
                   onclick={() => setDebugLevel(option.value)}
                 >
@@ -178,7 +178,7 @@
 
           <!-- Output Format -->
           <div class="space-y-1.5">
-            <span class="text-xs text-[var(--text-muted)]">Output Format</span>
+            <span class="text-xs text-(--text-muted)">Output Format</span>
             <div class="flex gap-1">
               {#each outputFormat as option}
                 {@const isSelected = $settings.outputFormat === option.value}
@@ -186,8 +186,8 @@
                   type="button"
                   class="flex-1 px-2 py-1.5 text-xs rounded-md transition-colors border
                     {isSelected 
-                      ? 'bg-[var(--bg-tertiary)] border-[var(--accent)] text-[var(--text-primary)]' 
-                      : 'hover:bg-[var(--bg-tertiary)] border-transparent text-[var(--text-secondary)]'}"
+                      ? 'bg-(--bg-tertiary) border-(--accent) text-(--text-primary)' 
+                      : 'hover:bg-(--bg-tertiary) border-transparent text-(--text-secondary)'}"
                   title={option.description}
                   onclick={() => setOutputFormat(option.value)}
                 >
@@ -203,9 +203,9 @@
               type="checkbox"
               checked={$settings.compilerRemarks}
               onchange={(e) => setCompilerRemarks(e.currentTarget.checked)}
-              class="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-tertiary)] accent-[var(--accent)]"
+              class="w-4 h-4 rounded border-(--border-color) bg-(--bg-tertiary) accent-(--accent)"
             />
-            <span class="text-xs text-[var(--text-secondary)]">Show compiler remarks</span>
+            <span class="text-xs text-(--text-secondary)">Show compiler remarks</span>
           </label>
         </div>
       </div>
