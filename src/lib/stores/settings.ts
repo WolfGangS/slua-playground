@@ -1,8 +1,9 @@
 import { writable, get } from 'svelte/store';
-import LZString from 'lz-string';
+import { parseStateFromHash } from '$lib/utils/decode';
+import { STORAGE_KEY, defaultSettings } from '$lib/constants';
 
-export type LuauMode = 'strict' | 'nonstrict' | 'nocheck';
-export type SolverMode = 'new' | 'old';
+export type LuauMode = "strict" | "nonstrict" | "nocheck";
+export type SolverMode = "new" | "old";
 export type OptimizationLevel = 0 | 1 | 2;
 export type DebugLevel = 0 | 1 | 2;
 export type OutputFormat = 0 | 1 | 2 | 3;
@@ -18,43 +19,21 @@ export interface PlaygroundSettings {
   compilerRemarks: boolean;
 }
 
-const STORAGE_KEY = 'luau-playground-settings';
-
-const defaultSettings: PlaygroundSettings = {
-  mode: 'strict',
-  solver: 'new',
-  optimizationLevel: 1,
-  debugLevel: 1,
-  outputFormat: 0,
-  compilerRemarks: false,
-};
-
 // Try to load settings from URL hash
 function loadSettingsFromUrl(): { settings: PlaygroundSettings | null; showBytecode: boolean | null } {
   if (typeof window === 'undefined') {
     return { settings: null, showBytecode: null };
   }
   
-  const hash = window.location.hash;
-  if (!hash.startsWith('#code=')) {
+  const state = parseStateFromHash(window.location.hash);
+  if (!state) {
     return { settings: null, showBytecode: null };
   }
   
-  try {
-    const encoded = hash.slice(6); // Remove '#code='
-    const json = LZString.decompressFromEncodedURIComponent(encoded);
-    if (!json) {
-      return { settings: null, showBytecode: null };
-    }
-    
-    const state = JSON.parse(json) as { settings?: PlaygroundSettings; showBytecode?: boolean };
-    return {
-      settings: state.settings ?? null,
-      showBytecode: state.showBytecode ?? null,
-    };
-  } catch {
-    return { settings: null, showBytecode: null };
-  }
+  return {
+    settings: state.settings ?? null,
+    showBytecode: state.showBytecode ?? null,
+  };
 }
 
 function loadSettingsFromStorage(): PlaygroundSettings {
@@ -96,19 +75,19 @@ function mergeSettings(partial: Partial<PlaygroundSettings>): PlaygroundSettings
 function loadSettings(): { settings: PlaygroundSettings; showBytecode: boolean } {
   // First try to load from URL (takes priority for shared links)
   const urlState = loadSettingsFromUrl();
-  
-  if (urlState.settings) {
-    // URL settings found - use them (with defaults for any missing fields)
-    return {
-      settings: mergeSettings(urlState.settings),
-      showBytecode: urlState.showBytecode ?? false,
-    };
-  }
-  
-  // Fall back to localStorage
+
+  const settingsFromUrl = urlState.settings;
+  const showFromUrl = urlState.showBytecode;
+
+  const settings = settingsFromUrl
+    ? mergeSettings(settingsFromUrl)
+    : loadSettingsFromStorage();
+
+  const showBytecode = showFromUrl ?? false;
+
   return {
-    settings: loadSettingsFromStorage(),
-    showBytecode: false,
+    settings,
+    showBytecode,
   };
 }
 

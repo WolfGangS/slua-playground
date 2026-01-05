@@ -6,82 +6,71 @@
 
 import { files, activeFile } from '$lib/stores/playground';
 import { settings, showBytecode, type PlaygroundSettings } from '$lib/stores/settings';
+import { defaultSettings, CURRENT_VERSION, DEFAULT_FILENAME } from '$lib/constants';
 import { get } from 'svelte/store';
 import LZString from 'lz-string';
+import { type ShareState, type MinimalShareState } from '$lib/utils/decode';
 
-export interface ShareState {
-  files: Record<string, string>;
-  active: string;
-  v: number; // Version for future compatibility
-  settings?: PlaygroundSettings;
-  showBytecode?: boolean;
+/**
+ * Check if settings differ from defaults.
+ */
+function getNonDefaultSettings(s: PlaygroundSettings): Partial<PlaygroundSettings> | null {
+  const diff: Partial<PlaygroundSettings> = {};
+  if (s.mode !== defaultSettings.mode) diff.mode = s.mode;
+  if (s.solver !== defaultSettings.solver) diff.solver = s.solver;
+  if (s.optimizationLevel !== defaultSettings.optimizationLevel) diff.optimizationLevel = s.optimizationLevel;
+  if (s.debugLevel !== defaultSettings.debugLevel) diff.debugLevel = s.debugLevel;
+  if (s.outputFormat !== defaultSettings.outputFormat) diff.outputFormat = s.outputFormat;
+  if (s.compilerRemarks !== defaultSettings.compilerRemarks) diff.compilerRemarks = s.compilerRemarks;
+  return Object.keys(diff).length > 0 ? diff : null;
 }
 
-const CURRENT_VERSION = 1;
-const PLAYGROUND_URL = 'https://play.luau.org';
+/**
+ * Convert full state to minimal state (v2) for compression.
+ */
+function toMinimalState(state: ShareState): MinimalShareState {
+  const minimal: MinimalShareState = { v: state.v };
+  
+  const fileNames = Object.keys(state.files);
+  const isSingleDefaultFile = fileNames.length === 1 && fileNames[0] === DEFAULT_FILENAME;
+  
+  if (isSingleDefaultFile) {
+    minimal.c = state.files[DEFAULT_FILENAME];
+  } else {
+    minimal.f = state.files;
+    // Only include active if there are multiple files
+    if (fileNames.length > 1) {
+      minimal.a = state.active;
+    }
+  }
+    
+  if (state.settings) {
+    const nonDefault = getNonDefaultSettings(state.settings);
+    if (nonDefault) {
+      minimal.s = nonDefault;
+    }
+  }
+  
+  if (state.showBytecode) {
+    minimal.b = true;
+  }
+  
+  return minimal;
+}
 
 /**
  * Encode state to a URL-safe string.
  */
 export function encodeState(state: ShareState): string {
-  const json = JSON.stringify(state);
+  const minimal = toMinimalState(state);
+  const json = JSON.stringify(minimal);
   return LZString.compressToEncodedURIComponent(json);
 }
 
 /**
- * Decode a URL-safe string back to state.
- */
-export function decodeState(encoded: string): ShareState | null {
-  try {
-    const json = LZString.decompressFromEncodedURIComponent(encoded);
-    if (!json) return null;
-    
-    const state = JSON.parse(json) as ShareState;
-    
-    // Validate the state
-    if (!state.files || typeof state.files !== 'object') return null;
-    if (!state.active || typeof state.active !== 'string') return null;
-    
-    return state;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Generate a playground URL with encoded state.
- * This is a pure function that doesn't depend on stores.
  */
-export function generatePlaygroundUrl(
-  filesData: Record<string, string>,
-  activeFileName: string,
-  baseUrl: string = PLAYGROUND_URL
-): string {
-  const state: ShareState = {
-    files: filesData,
-    active: activeFileName,
-    v: CURRENT_VERSION,
-  };
-  
-  const encoded = encodeState(state);
-  return `${baseUrl}/#code=${encoded}`;
-}
-
-/**
- * Open the code in the playground in a new tab.
- */
-export function openInPlayground(
-  filesData: Record<string, string>,
-  activeFileName: string
-): void {
-  const url = generatePlaygroundUrl(filesData, activeFileName);
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
-
-/**
- * Generate a share URL and copy it to the clipboard.
- */
-export async function sharePlayground(): Promise<boolean> {
+export function generatePlaygroundUrl(): URL {
   const state: ShareState = {
     files: get(files),
     active: get(activeFile),
@@ -89,10 +78,18 @@ export async function sharePlayground(): Promise<boolean> {
     settings: get(settings),
     showBytecode: get(showBytecode),
   };
-
+  
+  const url = new URL(window.location.origin + window.location.pathname);
   const encoded = encodeState(state);
-  const url = new URL(window.location.href);
-  url.hash = `code=${encoded}`;
+  url.hash = encoded;
+  return url;
+}
+
+/**
+ * Generate a share URL and copy it to the clipboard.
+ */
+export async function sharePlayground(): Promise<boolean> {
+  const url = generatePlaygroundUrl();
 
   try {
     await navigator.clipboard.writeText(url.toString());
@@ -102,13 +99,4 @@ export async function sharePlayground(): Promise<boolean> {
     window.history.replaceState(null, '', url.toString());
     return false;
   }
-}
-
-/**
- * Initialize share functionality.
- * Note: URL state is now loaded during store initialization to avoid race conditions.
- */
-export function initShare(): void {
-  // URL state is loaded during store initialization in playground.ts
-  // This function is kept for potential future initialization needs
 }
