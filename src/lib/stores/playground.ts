@@ -22,7 +22,7 @@ const defaultCode = `-- Welcome to the SLua Playground!
 -- Syntax highlighting and linting is still a work in progress.
 -- so some SLua features will get marked as errors but should still run.
 
-local function greet(name: string): string
+local function greet(name: string): {string}
     return {\`Hello, {name}!\`}
 end
 
