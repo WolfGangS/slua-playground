@@ -869,10 +869,10 @@ static void ensureAnalysisInit() {
     }
     
     // Register built-in types
-    Luau::registerBuiltinGlobals(*g_frontend, g_frontend->globals, false);
+    Luau::registerBuiltinGlobals(*g_frontend, g_frontend->globals, false, true);
     Luau::freeze(g_frontend->globals.globalTypes);
     
-    Luau::registerBuiltinGlobals(*g_frontend, g_frontend->globalsForAutocomplete, true);
+    Luau::registerBuiltinGlobals(*g_frontend, g_frontend->globalsForAutocomplete, true, true);
     Luau::freeze(g_frontend->globalsForAutocomplete.globalTypes);
 }
 

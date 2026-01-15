@@ -51,7 +51,7 @@ jobs:
       - name: Clone or update Luau
         run: |
           if [ ! -d "wasm/luau" ]; then
-            git clone --depth 1 https://github.com/secondlife/slua.git wasm/luau
+            git clone --depth 1 -b wolfgang/analyze-slua https://github.com/wolfgangs/slua.git wasm/luau
           else
             cd wasm/luau
             git fetch origin
