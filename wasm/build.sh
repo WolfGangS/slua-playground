@@ -24,8 +24,13 @@ fi
 LUAU_DIR="$SCRIPT_DIR/luau"
 if [ ! -d "$LUAU_DIR" ] || [ ! -f "$LUAU_DIR/CMakeLists.txt" ]; then
     echo "Luau source not found. Cloning..."
-    git clone --depth 1 https://github.com/Roblox/luau.git "$LUAU_DIR"
+    git clone --depth 1 https://github.com/secondlife/slua.git "$LUAU_DIR"
 fi
+
+echo '// Auto-generated from builtins.txt' > src/builtins_embedded.h
+echo 'static const char* const EMBEDDED_BUILTINS = R"builtins(' >> src/builtins_embedded.h
+cat luau/builtins.txt >> src/builtins_embedded.h
+echo ')builtins";' >>  src/builtins_embedded.h
 
 # Create build directory
 BUILD_DIR="$SCRIPT_DIR/build"
