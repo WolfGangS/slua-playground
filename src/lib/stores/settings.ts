@@ -83,7 +83,7 @@ function loadSettings(): { settings: PlaygroundSettings; showBytecode: boolean }
     ? mergeSettings(settingsFromUrl)
     : loadSettingsFromStorage();
 
-  const showBytecode = showFromUrl ?? false;
+  const showBytecode = showFromUrl ?? true;
 
   return {
     settings,
