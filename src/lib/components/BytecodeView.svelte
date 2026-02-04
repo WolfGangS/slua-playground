@@ -289,6 +289,7 @@
         error = result.error || 'Compilation failed';
         bytecodeContent = '';
         parsedLines = [];
+        bytecodeSize = 0;
       }
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
@@ -299,6 +300,7 @@
       }
       bytecodeContent = '';
       parsedLines = [];
+      bytecodeSize = 0;
     } finally {
       isLoading = false;
     }
@@ -306,7 +308,7 @@
 
   function getFormatLabel(format: number): string {
     switch (format) {
-      case 0: return `VM Bytecode (${bytecodeSize} bytes)`;
+      case 0: return `VM Bytecode`;
       case 1: return 'IR';
       case 2: return 'x64 Assembly';
       case 3: return 'ARM64 Assembly';
@@ -320,7 +322,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between px-3 py-2 border-b border-(--border-color) bg-(--bg-secondary) shrink-0">
       <div class="flex items-center gap-2">
-        <span class="text-sm font-medium text-(--text-primary)">{getFormatLabel(outputFormat)}</span>
+        <span class="text-sm font-medium text-(--text-primary)">{getFormatLabel(outputFormat)} {bytecodeSize < 1 ? '' : `(${bytecodeSize} bytes)`}</span>
         {#if isLoading}
           <span class="text-xs text-(--text-muted) animate-pulse">compiling...</span>
         {/if}
