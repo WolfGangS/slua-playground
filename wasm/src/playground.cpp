@@ -686,11 +686,13 @@ EXPORT const char* luau_dump_bytecode(const char* code, int optimizationLevel, i
         asmOptions.annotatorContext = &bytecode;
 
         std::string dump;
+        size_t bytecodeSize = 0;
 
         switch (outputFormat)
         {
         case 0:
             dump = bytecode.dumpEverything();
+            bytecodeSize = bytecode.getBytecode().size();
             break;
         case 1:
             // Use X64_SystemV for IR since we're in WASM (Host won't work)
@@ -726,7 +728,7 @@ EXPORT const char* luau_dump_bytecode(const char* code, int optimizationLevel, i
         }
 
         std::ostringstream result;
-        result << "{\"success\":true,\"bytecode\":" << json::string(dump) << "}";
+        result << "{\"success\":true,\"bytecode\":" << json::string(dump) << ",\"bytecodeSize\":" << bytecodeSize << "}";
         return setResult(result.str());
     } catch (const Luau::CompileError& e) {
         std::ostringstream result;

@@ -12,6 +12,7 @@
   }
 
   let bytecodeContent = $state('');
+  let bytecodeSize = $state(0);
   let parsedLines = $state<ParsedLine[]>([]);
   let outputFormat = $state(0);
   let isLoading = $state(false);
@@ -283,6 +284,7 @@
       if (result.success) {
         bytecodeContent = result.bytecode;
         parsedLines = parseLines(result.bytecode);
+        bytecodeSize = result.bytecodeSize ?? 0;
       } else {
         error = result.error || 'Compilation failed';
         bytecodeContent = '';
@@ -304,7 +306,7 @@
 
   function getFormatLabel(format: number): string {
     switch (format) {
-      case 0: return 'VM Bytecode';
+      case 0: return `VM Bytecode (${bytecodeSize} bytes)`;
       case 1: return 'IR';
       case 2: return 'x64 Assembly';
       case 3: return 'ARM64 Assembly';
