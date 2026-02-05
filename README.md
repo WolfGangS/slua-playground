@@ -6,6 +6,8 @@ A browser-based SLua code playground with execution and IDE features.
 
 ![SLua Playground](https://img.shields.io/badge/SLua-Playground-blue)
 
+This project is a fork of [Luau Playground](https://github.com/luau-lang/playground) to rebase on [SLua](https://github.com/secondlife/slua) instead for use with Second Life
+
 ## Features
 
 - **Code Execution**: Run SLua code directly in the browser via WebAssembly
