@@ -1,14 +1,16 @@
-# Luau Playground
+# SLua Playground
 
-A browser-based Luau code playground with execution and IDE features.
+<img src="https://github.com/Martin-Pitt/slua-logo/raw/main/slua.png" height="150px" align="right">
 
-![Luau Playground](https://img.shields.io/badge/Luau-Playground-blue)
+A browser-based SLua code playground with execution and IDE features.
+
+![SLua Playground](https://img.shields.io/badge/SLua-Playground-blue)
 
 ## Features
 
-- **Code Execution**: Run Luau code directly in the browser via WebAssembly
-- **Type Checking**: Type check Luau code directly in the browser via WebAssembly
-- **Syntax Highlighting**: Full Luau syntax support with light/dark themes
+- **Code Execution**: Run SLua code directly in the browser via WebAssembly
+- **Type Checking**: Type check SLua code directly in the browser via WebAssembly
+- **Syntax Highlighting**: Full SLua syntax support with light/dark themes
 - **IDE Features**: 
   - Real-time diagnostics (type errors, lint warnings)
   - Autocomplete with type information
@@ -21,8 +23,8 @@ A browser-based Luau code playground with execution and IDE features.
 ## Stack
 
 - **Frontend**: Svelte 5 + Vite
-- **Editor**: CodeMirror 6 with custom Luau language mode
-- **Runtime**: Luau compiled to WebAssembly
+- **Editor**: CodeMirror 6 with custom SLua language mode
+- **Runtime**: SLua compiled to WebAssembly
 
 ## Getting Started
 
@@ -49,7 +51,7 @@ npm run preview
 
 ### Building the WASM Module
 
-The Luau WASM module needs to be built separately using Emscripten:
+The SLua WASM module needs to be built separately using Emscripten:
 
 ```bash
 cd wasm
@@ -75,7 +77,7 @@ The built WASM file will be copied to `public/wasm/`.
 Share playground state via URL hash:
 
 ```
-https://play.luau.org/#<compressed-state>
+https://slua-playground.wlf.io/#<compressed-state>
 ```
 
 The state is LZ-String compressed and versioned JSON:
@@ -110,7 +112,7 @@ v1:
 Embed the playground in an iframe with a minimal UI:
 
 ```
-https://play.luau.org/?embed=true#<compressed-state>
+https://slua-playground.wlf.io/?embed=true#<compressed-state>
 ```
 
 Query parameters:
