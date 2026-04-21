@@ -20,14 +20,21 @@ interface PersistedPlaygroundState {
 }
 
 // Default initial code
-const defaultCode = `-- Welcome to the Luau Playground!
+const defaultCode = `-- Welcome to the SLua Playground!
+-- A fork of the Luau Playground altered for Second Life's SLua language.
+-- See original project: https://github.com/luau-lang/playground
+-- 
 -- Write your code here and click Run
+--
+-- Syntax highlighting and linting is still a work in progress.
+-- so some SLua features will get marked as errors but should still run.
+-- Most ll.* functions, LLTimers, and LLEvents are not supported yet.
 
-local function greet(name: string): string
-    return \`Hello, {name}!\`
+local function greet(name: string): {string}
+    return {\`Hello, {name}!\`}
 end
 
-print(greet("World"))
+print(lljson.encode(greet("World")))
 
 -- Try some Luau features:
 local numbers = {1, 2, 3, 4, 5}

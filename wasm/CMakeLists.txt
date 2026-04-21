@@ -32,9 +32,15 @@ endif()
 file(GLOB LUAU_COMMON_SOURCES "${LUAU_SOURCE_DIR}/Common/src/*.cpp")
 file(GLOB LUAU_AST_SOURCES "${LUAU_SOURCE_DIR}/Ast/src/*.cpp")
 file(GLOB LUAU_COMPILER_SOURCES "${LUAU_SOURCE_DIR}/Compiler/src/*.cpp")
+# Exclude SLua-specific LSLCompiler from the WASM build
+list(FILTER LUAU_COMPILER_SOURCES EXCLUDE REGEX "LSLCompiler\\.cpp$")
 file(GLOB LUAU_CONFIG_SOURCES "${LUAU_SOURCE_DIR}/Config/src/*.cpp")
 file(GLOB LUAU_ANALYSIS_SOURCES "${LUAU_SOURCE_DIR}/Analysis/src/*.cpp")
-file(GLOB LUAU_VM_SOURCES "${LUAU_SOURCE_DIR}/VM/src/*.cpp")
+file(GLOB LUAU_VM_SOURCES 
+    "${LUAU_SOURCE_DIR}/VM/src/*.cpp"
+    "${LUAU_SOURCE_DIR}/VM/src/cjson/*.cpp"
+    "${LUAU_SOURCE_DIR}/VM/src/apr/*.cpp"
+)
 file(GLOB LUAU_REQUIRE_SOURCES "${LUAU_SOURCE_DIR}/Require/src/*.cpp")
 
 # CodeGen sources - only include files needed for assembly TEXT generation
@@ -124,9 +130,11 @@ target_link_libraries(Luau.CodeGen PUBLIC Luau.Ast Luau.VM Luau.Common)
 add_executable(luau_playground
     src/playground.cpp
     src/codegen_stubs.cpp
+    ${LUAU_SOURCE_DIR}/CLI/src/LSLBuiltins.cpp
 )
 
 target_include_directories(luau_playground PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${LUAU_SOURCE_DIR}/Ast/include
     ${LUAU_SOURCE_DIR}/Analysis/include
     ${LUAU_SOURCE_DIR}/Compiler/include
@@ -135,6 +143,7 @@ target_include_directories(luau_playground PRIVATE
     ${LUAU_SOURCE_DIR}/VM/include
     ${LUAU_SOURCE_DIR}/CodeGen/include
     ${LUAU_SOURCE_DIR}/Require/include
+    ${LUAU_SOURCE_DIR}/CLI/include
 )
 
 target_link_libraries(luau_playground PRIVATE

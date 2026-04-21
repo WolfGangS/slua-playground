@@ -44,6 +44,8 @@ LUAU_FASTFLAG(LuauSolverV2)
 #include "lua.h"
 #include "lualib.h"
 #include "luacode.h"
+#include "llsl.h"
+#include "Luau/LSLBuiltins.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -657,10 +659,41 @@ static int errorHandler(lua_State* L) {
     return 1;
 }
 
+// SL mode state
+static lua_SLRuntimeState sl_state;
+
+static void userthread_callback(lua_State* LP, lua_State* L)
+{
+    if (LP == nullptr)
+        return;
+    lua_setthreaddata(L, lua_getthreaddata(LP));
+}
+
 // Register sandbox globals
 static void registerPlaygroundGlobals(lua_State* L, PlaygroundRequireContext* requireCtx) {
     // Open standard libraries FIRST
     luaL_openlibs(L);
+
+    // SL mode setup
+    lua_setthreaddata(L, &sl_state);
+    sl_state.slIdentifier = LUA_SL_IDENTIFIER;
+    lua_callbacks(L)->userthread = userthread_callback;
+
+    // SL libraries
+    luaopen_sl(L, true);
+    luaopen_ll(L, true);
+    lua_pop(L, 1);
+
+    // JSON and Base64
+    luaopen_cjson(L);
+    lua_pop(L, 1);
+    luaopen_llbase64(L);
+    lua_pop(L, 1);
+
+    luauSL_init_global_builtins(nullptr);
+
+    // Set SL constants on _G
+    luaSL_set_constant_globals(L);
     
     // THEN override print with our custom version that captures output
     lua_pushcfunction(L, playgroundPrint, "print");
@@ -865,11 +898,13 @@ EXPORT const char* luau_dump_bytecode(const char* code, int optimizationLevel, i
         asmOptions.annotatorContext = &bytecode;
 
         std::string dump;
+        size_t bytecodeSize = 0;
 
         switch (outputFormat)
         {
         case 0:
             dump = bytecode.dumpEverything();
+            bytecodeSize = bytecode.getBytecode().size();
             break;
         case 1:
             // Use X64_SystemV for IR since we're in WASM (Host won't work)
@@ -905,7 +940,7 @@ EXPORT const char* luau_dump_bytecode(const char* code, int optimizationLevel, i
         }
 
         std::ostringstream result;
-        result << "{\"success\":true,\"bytecode\":" << json::string(dump) << "}";
+        result << "{\"success\":true,\"bytecode\":" << json::string(dump) << ",\"bytecodeSize\":" << bytecodeSize << "}";
         return setResult(result.str());
     } catch (const Luau::CompileError& e) {
         std::ostringstream result;

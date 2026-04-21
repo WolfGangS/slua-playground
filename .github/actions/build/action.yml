@@ -11,6 +11,7 @@ runs:
         path: emsdk
 
     - name: Get latest Luau release
+      if: false
       id: luau-release
       shell: bash
       run: |
@@ -48,12 +49,11 @@ runs:
     - name: Clone or update Luau
       shell: bash
       run: |
-        TAG=${{ steps.luau-release.outputs.tag }}
         if [ ! -d "wasm/luau" ]; then
-          git clone --depth 1 --branch $TAG https://github.com/luau-lang/luau.git wasm/luau
+          git clone --depth 1 --branch wolfgang/playground https://github.com/wolfgangs/slua.git wasm/luau
         else
           cd wasm/luau
-          git fetch origin $TAG
+          git fetch origin wolfgang/playground
           git diff --quiet HEAD FETCH_HEAD || git reset --hard FETCH_HEAD
         fi
 

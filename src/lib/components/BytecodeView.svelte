@@ -12,6 +12,7 @@
   }
 
   let bytecodeContent = $state('');
+  let bytecodeSize = $state(0);
   let parsedLines = $state<ParsedLine[]>([]);
   let outputFormat = $state(0);
   let isLoading = $state(false);
@@ -283,10 +284,12 @@
       if (result.success) {
         bytecodeContent = result.bytecode;
         parsedLines = parseLines(result.bytecode);
+        bytecodeSize = result.bytecodeSize ?? 0;
       } else {
         error = result.error || 'Compilation failed';
         bytecodeContent = '';
         parsedLines = [];
+        bytecodeSize = 0;
       }
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
@@ -297,6 +300,7 @@
       }
       bytecodeContent = '';
       parsedLines = [];
+      bytecodeSize = 0;
     } finally {
       isLoading = false;
     }
@@ -331,6 +335,9 @@
     <div class="flex items-center justify-between px-3 py-2 border-b border-(--border-color) bg-(--bg-secondary) shrink-0">
       <div class="flex items-center gap-2">
         <span class="text-sm font-medium text-(--text-primary)">{getFormatLabel(outputFormat)}</span>
+        {#if bytecodeSize > 0}
+          <span class="text-xs text-(--text-muted)">({bytecodeSize} bytes)</span>
+        {/if}
         {#if isLoading}
           <span class="text-xs text-(--text-muted) animate-pulse">compiling...</span>
         {/if}

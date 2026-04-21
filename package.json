@@ -1,8 +1,8 @@
 {
-  "name": "luau-playground",
+  "name": "slua-playground",
   "private": true,
   "version": "0.1.0",
-  "description": "Browser-based Luau code playground with execution and IDE features",
+  "description": "Browser-based SLua code playground with execution and IDE features",
   "type": "module",
   "license": "MIT",
   "scripts": {

@@ -624,7 +624,7 @@ export async function getBytecode(
   debugLevel: number = 2,
   outputFormat: number = 0,
   showRemarks: boolean = false
-): Promise<{ success: boolean; bytecode: string; error?: string }> {
+): Promise<{ success: boolean; bytecode: string; bytecodeSize?: number; error?: string }> {
   try {
     const response = await sendAnalysisRequest('getBytecode', { 
       code, 

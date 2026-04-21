@@ -7,6 +7,7 @@ dist/
 # WASM build artifacts
 wasm/build/
 wasm/luau/
+wasm/src/builtins_embedded.h
 
 # IDE
 .idea/

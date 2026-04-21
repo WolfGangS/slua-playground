@@ -57,16 +57,16 @@ function loadSettingsFromStorage(): PlaygroundSettings {
 
 function loadShowBytecodeFromStorage(): boolean {
   if (typeof window === 'undefined') {
-    return false;
+    return true;
   }
   if (detectEmbedMode()) {
     return false;
   }
 
   try {
-    return localStorage.getItem(UI_STORAGE_KEY) === '1';
+    return (localStorage.getItem(UI_STORAGE_KEY) ?? '1') === '1';
   } catch {
-    return false;
+    return true;
   }
 }
 
