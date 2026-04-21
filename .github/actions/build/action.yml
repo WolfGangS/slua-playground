@@ -50,7 +50,7 @@ runs:
       shell: bash
       run: |
         if [ ! -d "wasm/luau" ]; then
-          git clone --depth 1 --branch wolfgang/playground https://github.com/wolfgangs/slua.git wasm/luau
+          git clone --depth 1 --branch wolfgang/playground https://github.com/WolfGangS/slua.git wasm/luau
         else
           cd wasm/luau
           git fetch origin wolfgang/playground

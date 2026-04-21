@@ -24,7 +24,7 @@ fi
 LUAU_DIR="$SCRIPT_DIR/luau"
 if [ ! -d "$LUAU_DIR" ] || [ ! -f "$LUAU_DIR/CMakeLists.txt" ]; then
     echo "Luau source not found. Cloning..."
-    git clone --depth 1 -b wolfgang/playground https://github.com/wolfgangs/slua.git "$LUAU_DIR"
+    git clone --depth 1 --branch wolfgang/playground https://github.com/WolfGangS/slua.git "$LUAU_DIR"
 fi
 
 echo '// Auto-generated from builtins.txt' > src/builtins_embedded.h
