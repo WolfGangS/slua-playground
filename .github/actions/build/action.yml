@@ -34,10 +34,9 @@ runs:
           wasm/luau
           public/wasm/luau.wasm
           src/lib/luau/luau-module.js
-        key: build-${{ runner.os }}-${{ hashFiles('wasm/src/**', 'wasm/CMakeLists.txt', 'wasm/build.sh') }}-slua-${{ steps.luau-release.outputs.commit }}
+        key: build-${{ runner.os }}-${{ hashFiles('wasm/src/**', 'wasm/CMakeLists.txt', 'wasm/build.sh') }}-slua-wolfgang/playground
         restore-keys: |
           build-${{ runner.os }}-${{ hashFiles('wasm/src/**', 'wasm/CMakeLists.txt', 'wasm/build.sh') }}-slua-
-          build-${{ runner.os }}-
 
     - name: Install Emscripten
       shell: bash
