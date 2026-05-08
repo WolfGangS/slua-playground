@@ -24,6 +24,7 @@ export function handleSLuaVMQuery(query: string): string {
 }
 
 function handleLLQuery(name: string, args: any[]): string {
+    console.log("handleLLQuery", name, args);
     if(!(args instanceof Array)) {
         throw "args must be an array";
     }
@@ -40,11 +41,11 @@ function castArg(arg: any): any {
         const tag = arg.substring(0, 2);
         switch(tag) {
             case "!v":
-                return SLuaVec.fromSLJson(arg.substring(1));
+                return SLuaVec.fromSLJson(arg);
             case "!u":
-                return SLuaUUID.fromSLJson(arg.substring(1));
+                return SLuaUUID.fromSLJson(arg);
             case "!q":
-                return SLuaQuaternion.fromSLJson(arg.substring(1));
+                return SLuaQuaternion.fromSLJson(arg);
             case "!n":
                 return null;
             case "!!":
@@ -1902,6 +1903,7 @@ function LLQuery(name: string, args: any[]): any {
     case "GetPos":
         return state.prim.pos;
     case "SetPos":
+        console.log("SetPos", args, argCheck(args, ["vector"])[0]);
         state.prim.pos = argCheck(args, ["vector"])[0];
         return null;
     case "Say":
