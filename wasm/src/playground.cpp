@@ -40,16 +40,35 @@
 // Feature flags for new solver
 LUAU_FASTFLAG(LuauSolverV2)
 
+#define UTAG_LL 100
+
 // Luau VM headers
 #include "lua.h"
 #include "lualib.h"
 #include "luacode.h"
 #include "llsl.h"
+
 #include "Luau/LSLBuiltins.h"
+#include "lljson.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #define EXPORT extern "C" EMSCRIPTEN_KEEPALIVE
+// Call into JavaScript with a string; returns pointer to UTF-8 result (caller must free).
+// JS implements Module['callJsString'](str) -> string.
+EM_JS(char*, call_js_with_string_impl, (const char* input), {
+    var str = UTF8ToString(input);
+    var result = (typeof Module['callJsString'] === 'function')
+        ? Module['callJsString'](str)
+        : str;
+    if (result === undefined || result === null) result = '';
+    else result = String(result);
+    var length = lengthBytesUTF8(result) + 1;
+    var ptr = _malloc(length);
+    stringToUTF8(result, ptr, length);
+    return ptr;
+});
+
 #else
 #define EXPORT extern "C"
 #endif
@@ -109,6 +128,26 @@ const char* setResult(std::string result) {
     g_resultBuffer = std::move(result);
     return g_resultBuffer.c_str();
 }
+
+
+/**
+ * Call JavaScript with a string and get a string result.
+ * The JS side must set Module['callJsString'] = (str) => string before calling.
+ * Returns the result string (valid until next call to any function that uses setResult).
+ */
+EXPORT const char* call_js_with_string(const char* input) {
+#ifdef __EMSCRIPTEN__
+    char* ptr = call_js_with_string_impl(input);
+    if (!ptr) return setResult("");
+    std::string result(ptr);
+    free(ptr);
+    return setResult(result);
+#else
+    (void)input;
+    return setResult("");
+#endif
+}
+
 
 // ============================================================================
 // Execution: Luau VM
@@ -669,6 +708,100 @@ static void userthread_callback(lua_State* LP, lua_State* L)
     lua_setthreaddata(L, lua_getthreaddata(LP));
 }
 
+// Curried call: field name in upvalue 1, encodes stack args and sends query with name + args
+static int ll_slencode_call_curried(lua_State* L)
+{
+    const char* name = lua_tostring(L, lua_upvalueindex(1));
+    if (!name) name = "";
+
+    int n = lua_gettop(L);
+    lua_getglobal(L, "lljson");
+    if (lua_isnil(L, -1)) {
+        lua_pop(L, 1);
+        luaL_error(L, "lljson not found");
+        return 0;
+    }
+    lua_getfield(L, -1, "slencode");
+    lua_remove(L, -2);
+
+    lua_createtable(L, n, 0);
+    for (int i = 1; i <= n; i++) {
+        lua_pushvalue(L, i);
+        lua_rawseti(L, -2, i);
+    }
+    lua_createtable(L, 0, 1);
+    lua_pushboolean(L, 1);
+    lua_setfield(L, -2, "tight");
+
+    if (lua_pcall(L, 2, 1, 0) != LUA_OK) {
+        lua_error(L);
+        return 0;
+    }
+
+    const char* json = lua_tostring(L, -1);
+    lua_pop(L, 1);
+
+    std::ostringstream query;
+    query << "{\"query\":\"ll\",\"name\":\"" << name << "\",\"args\":" << json << "}";
+    const char* result = call_js_with_string(query.str().c_str());
+
+    if (!strcmp(result, "null")) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (strlen(result) > 7 && !strncmp(result, "Error: ", 7)) {
+        luaL_error(L, "%s", result);
+        return 0;
+    }
+
+    lua_getglobal(L, "lljson");
+    if (lua_isnil(L, -1)) {
+        lua_pop(L, 1);
+        luaL_error(L, "lljson not found");
+        return 0;
+    }
+    lua_getfield(L, -1, "sldecode");
+    lua_remove(L, -2);
+    lua_pushstring(L, result);
+    if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
+        lua_error(L);
+        return 0;
+    }
+
+    return 1;
+}
+
+static int ll_index_call(lua_State* L) {
+    // Return a C closure that knows the indexed field (e.g. ll.foo -> callable with name "foo")
+    luaL_checkstring(L, 2);  // validate key is string
+    lua_pushvalue(L, 2);     // upvalue: field name
+    lua_pushcclosure(L, ll_slencode_call_curried, "ll_call", 1);
+    return 1;
+}
+
+static const luaL_Reg ll_lib[] = {
+    {NULL, NULL},
+};
+
+int web_open_ll(lua_State* L)
+{
+    lua_newtable(L);
+    luaL_register(L, NULL, ll_lib);
+
+    // create metatable with all the metamethods
+    lua_newtable(L);
+    lua_pushcfunction(L, ll_index_call, "__index");
+    lua_setfield(L, -2, "__index");
+    lua_setreadonly(L, -1, true);
+    lua_setmetatable(L, -2);
+
+    lua_setglobal(L, "ll");
+
+    return 1;
+}
+
+
 // Register sandbox globals
 static void registerPlaygroundGlobals(lua_State* L, PlaygroundRequireContext* requireCtx) {
     // Open standard libraries FIRST
@@ -681,8 +814,9 @@ static void registerPlaygroundGlobals(lua_State* L, PlaygroundRequireContext* re
 
     // SL libraries
     luaopen_sl(L, true);
-    luaopen_ll(L, true);
-    lua_pop(L, 1);
+
+    web_open_ll(L);
+    //lua_pop(L, 1);
 
     // JSON and Base64
     luaopen_cjson(L);

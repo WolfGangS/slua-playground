@@ -77,6 +77,9 @@ export interface LuauWasmModule {
   // Bytecode
   ccall(name: 'luau_dump_bytecode', returnType: 'string', argTypes: ['string', 'number', 'number', 'number', 'number'], args: [string, number, number, number, number]): string;
   
+  // JS interop (C++ calls JS with a string and gets a string back)
+  ccall(name: 'call_js_with_string', returnType: 'string', argTypes: ['string'], args: [string]): string;
+  
   // Memory
   _malloc(size: number): number;
   _free(ptr: number): void;
@@ -85,6 +88,9 @@ export interface LuauWasmModule {
   UTF8ToString(ptr: number): string;
   stringToUTF8(str: string, outPtr: number, maxBytes: number): void;
   lengthBytesUTF8(str: string): number;
+    
+  /** Optional: called from WASM when call_js_with_string is used. (input) => string */
+  callJsString?(input: string): string;
 }
 
 export type CreateLuauModule = (options?: {

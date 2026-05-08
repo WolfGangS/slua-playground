@@ -14,6 +14,7 @@ import type {
   CreateLuauModule 
 } from './types';
 import createLuauModuleFactory from './luau-module.js';
+import { handleSLuaVMQuery } from './slua';
 
 // The WASM module singleton within this worker
 let wasmModule: LuauWasmModule | null = null;
@@ -74,6 +75,8 @@ async function loadModule(): Promise<LuauWasmModule> {
     });
 
     wasmModule = module;
+    // Dummy implementation: WASM can call JS with a string and get a string back via call_js_with_string
+    module.callJsString = handleSLuaVMQuery;
     return module;
   })();
 

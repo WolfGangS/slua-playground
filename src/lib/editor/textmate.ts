@@ -11,7 +11,7 @@
 import { StreamLanguage, LanguageSupport, type StringStream } from '@codemirror/language';
 import * as vsctm from 'vscode-textmate';
 import { createJsOnigLib } from './js-regex-engine';
-import luauGrammar from './Luau.tmLanguage.json';
+import luauGrammar from './SLua.tmLanguage.json';
 
 // Singleton state
 let registry: vsctm.Registry | null = null;
@@ -38,7 +38,7 @@ async function initTextMate(): Promise<void> {
       onigLib: createJsOnigLib(),
       loadGrammar: async (scopeName) => {
         if (scopeName === 'source.luau') {
-          return vsctm.parseRawGrammar(grammarJson, 'Luau.tmLanguage.json');
+          return vsctm.parseRawGrammar(grammarJson, 'SLua.tmLanguage.json');
         }
         return null;
       },

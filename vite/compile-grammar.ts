@@ -135,7 +135,7 @@ export function compileGrammarPlugin(): Plugin {
     name: 'compile-grammar',
     
     configResolved(config) {
-      grammarPath = resolve(config.root, 'src/lib/editor/Luau.tmLanguage.json');
+      grammarPath = resolve(config.root, 'src/lib/editor/SLua.tmLanguage.json');
     },
     
     resolveId(id) {
@@ -170,7 +170,7 @@ export function compileGrammarPlugin(): Plugin {
     
     handleHotUpdate({ file }) {
       // Invalidate cache when grammar file changes
-      if (file.endsWith('Luau.tmLanguage.json')) {
+      if (file.endsWith('SLua.tmLanguage.json')) {
         cachedModule = null;
         console.log('[compile-grammar] Grammar changed, will recompile patterns');
       }
