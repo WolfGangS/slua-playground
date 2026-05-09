@@ -47,6 +47,8 @@ LUAU_FASTFLAG(LuauSolverV2)
 #include "lualib.h"
 #include "luacode.h"
 #include "llsl.h"
+#include "lllevents.h"
+#include "llltimers.h"
 
 #include "Luau/LSLBuiltins.h"
 #include "lljson.h"
@@ -935,6 +937,16 @@ EXPORT const char* luau_execute(const char* code) {
     // Execute user code in its own sandboxed script thread.
     lua_State* scriptThread = lua_newthread(GL);
     luaL_sandboxthread(scriptThread);
+
+    // Event and timer managers (after sandbox)
+    luaSL_createeventmanager(scriptThread);
+    lua_ref(scriptThread, -1);
+    lua_pushvalue(scriptThread, -1);  // Duplicate for timer manager (it expects LLEvents on stack)
+    lua_setglobal(scriptThread, "LLEvents");
+
+    luaSL_createtimermanager(scriptThread);
+    lua_ref(scriptThread, -1);
+    lua_setglobal(scriptThread, "LLTimers");
     
     // Push error handler FIRST (so it's at a fixed position)
     lua_pushcfunction(scriptThread, errorHandler, "errorHandler");

@@ -141,6 +141,7 @@ target_include_directories(luau_playground PRIVATE
     ${LUAU_SOURCE_DIR}/Config/include
     ${LUAU_SOURCE_DIR}/Common/include
     ${LUAU_SOURCE_DIR}/VM/include
+    ${LUAU_SOURCE_DIR}/VM/src
     ${LUAU_SOURCE_DIR}/CodeGen/include
     ${LUAU_SOURCE_DIR}/Require/include
     ${LUAU_SOURCE_DIR}/CLI/include
