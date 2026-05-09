@@ -324,35 +324,38 @@ static void serializeValueToJson(lua_State* L, int idx, std::string& out, std::v
 static std::vector<std::string> g_printCalls;
 
 static int playgroundPrint(lua_State* L) {
+
     int n = lua_gettop(L);
-    
-    std::string valuesJson = "[";
-    for (int i = 1; i <= n; i++) {
-        if (i > 1) valuesJson += ",";
-        std::vector<const void*> seen;
-        serializeValueToJson(L, i, valuesJson, seen);
-    }
-    valuesJson += "]";
-    g_printCalls.push_back(valuesJson);
-    
-    // Plain text fallback
-    std::string line;
-    
-    for (int i = 1; i <= n; i++) {
-        size_t len;
-        const char* s = luaL_tolstring(L, i, &len);
-        if (s) {
-            if (i > 1) line += "\t";
-            line += std::string(s, len);
-        }
+    lua_getglobal(L, "lljson");
+    if (lua_isnil(L, -1)) {
         lua_pop(L, 1);
+        luaL_error(L, "lljson not found");
+        return 0;
     }
-    
-    if (!g_outputBuffer.empty()) {
-        g_outputBuffer += "\n";
+    lua_getfield(L, -1, "slencode");
+    lua_remove(L, -2);
+
+    lua_createtable(L, n, 0);
+    for (int i = 1; i <= n; i++) {
+        lua_pushvalue(L, i);
+        lua_rawseti(L, -2, i);
     }
-    g_outputBuffer += line;
-    
+    lua_createtable(L, 0, 1);
+    lua_pushboolean(L, 1);
+    lua_setfield(L, -2, "tight");
+
+    if (lua_pcall(L, 2, 1, 0) != LUA_OK) {
+        lua_error(L);
+        return 0;
+    }
+
+    const char* json = lua_tostring(L, -1);
+    lua_pop(L, 1);
+
+    std::ostringstream query;
+    query << "{\"query\":\"print\",\"args\":" << json << "}";
+    call_js_with_string(query.str().c_str());
+
     return 0;
 }
 

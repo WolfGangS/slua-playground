@@ -119,6 +119,11 @@ function setupWorkerHandlers(manager: WorkerManager, name: string): void {
   
   manager.worker.onmessage = (e: MessageEvent<WorkerResponse & { requestId: string }>) => {
     const { requestId, ...response } = e.data;
+
+    if (response.type === 'print') {
+      appendOutput({ type: response.output.type, text: response.output.text });
+      return;
+    }
     
     const pending = manager.pendingRequests.get(requestId);
     if (pending) {

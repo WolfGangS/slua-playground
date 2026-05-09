@@ -108,7 +108,7 @@
 
   <!-- Content -->
   {#if isExpanded}
-    <div class="flex-1 overflow-auto p-1 py-0 sm:p-2 sm:py-1 lg:p-3 lg:py-2 font-mono text-xs sm:text-sm min-h-0">
+    <div class="flex-1 overflow-auto p-1 py-0 sm:p-2 sm:py-1 lg:p-3 lg:py-2 font-mono text-xs sm:text-sm min-h-0 whitespace-pre-wrap">
       {#if $output.length === 0}
         <span class="text-(--text-muted) italic">
           Run your code to see output here...

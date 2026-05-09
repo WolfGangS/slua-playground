@@ -14,7 +14,7 @@ import type {
   CreateLuauModule 
 } from './types';
 import createLuauModuleFactory from './luau-module.js';
-import { handleSLuaVMQuery } from './slua';
+import { handleSLuaVMQuery, setSLuaOutputSink } from './slua';
 
 // The WASM module singleton within this worker
 let wasmModule: LuauWasmModule | null = null;
@@ -39,6 +39,7 @@ export type WorkerRequest =
 
 export type WorkerResponse = 
   | { type: 'ready' }
+  | { type: 'print'; output: { type: "error"|"log"|"warn"; text: string } }
   | { type: 'execute'; result: ExecuteResult; elapsed: number }
   | { type: 'getDiagnostics'; result: DiagnosticsResult; elapsed: number }
   | { type: 'autocomplete'; result: AutocompleteResult }
@@ -121,7 +122,15 @@ self.onmessage = async (e: MessageEvent<WorkerRequest & { requestId: string }>) 
       case 'execute': {
         const module = await loadModule();
         const startTime = performance.now();
-        const resultJson = module.ccall('luau_execute', 'string', ['string'], [request.code]);
+        setSLuaOutputSink((type,text) => {
+          respond(requestId, { type: 'print', output: { type, text } });
+        });
+        let resultJson = '';
+        try {
+          resultJson = module.ccall('luau_execute', 'string', ['string'], [request.code]);
+        } finally {
+          setSLuaOutputSink(null);
+        }
         const elapsed = performance.now() - startTime;
         if (!resultJson) {
           respond(requestId, { 

@@ -1,7 +1,14 @@
 import { SLuaUUID, SLuaVec, SLuaQuaternion, PRIM, SLuaPrimitive, SLuaEntity, SLuaAvatar } from "./sl-sim";
 
+type SLuaOutputSink = ((type:"error"|"log"|"warn", text: string) => void) | null;
+
+let sluaOutputSink: SLuaOutputSink = null;
+
+export function setSLuaOutputSink(sink: SLuaOutputSink): void {
+    sluaOutputSink = sink;
+}
+
 export function handleSLuaVMQuery(query: string): string {
-    console.log("handleSLuaVMQuery", query);
     const data = JSON.parse(query) satisfies { query: string };
     let result = null;
     try {
@@ -11,6 +18,10 @@ export function handleSLuaVMQuery(query: string): string {
                 break;
             case "ll":
                 result = handleLLQuery(data.name, data.args);
+                break;
+            case "print":
+                handlePrint(data.args);
+                result = `ok`;
                 break;
             default:
                 result = `["Error","unknown query",${query}]`;
@@ -23,8 +34,18 @@ export function handleSLuaVMQuery(query: string): string {
     return result;
 }
 
+function handlePrint(args: any[]): void {
+    console.log("handlePrint", args);
+    args = castArgs(args);
+
+    if (sluaOutputSink) {
+        sluaOutputSink("log",args.join("\t"));
+    } else {
+        console.error("No output sink set", args);
+    }
+}
+
 function handleLLQuery(name: string, args: any[]): string {
-    console.log("handleLLQuery", name, args);
     if(!(args instanceof Array)) {
         throw "args must be an array";
     }
@@ -1903,7 +1924,6 @@ function LLQuery(name: string, args: any[]): any {
     case "GetPos":
         return state.prim.pos;
     case "SetPos":
-        console.log("SetPos", args, argCheck(args, ["vector"])[0]);
         state.prim.pos = argCheck(args, ["vector"])[0];
         return null;
     case "Say":

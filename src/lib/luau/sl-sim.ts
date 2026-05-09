@@ -13,10 +13,10 @@ export class SLuaUUID {
         this.value = uuid;
     }
     toString(): string {
-        return `!u${this.value}`;
+        return this.value;
     }
     toJSON(): string {
-        return this.toString();
+        return `!u${this.toString().slice(1,-1)}`;
     }
     static fromSLJson(json: string): SLuaUUID {
         return new SLuaUUID(json.substring(2));
@@ -243,10 +243,10 @@ export class SLuaVec {
         this.z = z;
     }
     toString(): string {
-        return `!v${this.x},${this.y},${this.z}`;
+        return `<${this.x},${this.y},${this.z}>`;
     }
     toJSON(): string {
-        return this.toString();
+        return `!v${this.toString().slice(1,-1)}`;
     }
     sub(pos: SLuaVec): SLuaVec {
         return new SLuaVec(this.x - pos.x, this.y - pos.y, this.z - pos.z);
@@ -256,7 +256,7 @@ export class SLuaVec {
     }
     static fromSLJson(json: string): SLuaVec {
         const parts = json.substring(2).split(',');
-        return new SLuaVec(Number(parts[0]), Number(parts[1]), Number(parts[2]));
+        return new SLuaVec(Number(parts[0] ?? 0), Number(parts[1] ?? 0), Number(parts[2] ?? 0));
     }
     static fromString(str: string): SLuaVec {
         const parts = str.trim().substring(1).split(',');
@@ -283,14 +283,14 @@ export class SLuaQuaternion {
         this.x = x;
     }
     toString(): string {
-        return `!q${this.x},${this.y},${this.z},${this.w}`;
+        return `<${this.x},${this.y},${this.z},${this.w}>`;
     }
     toJSON(): string {
-        return this.toString();
+        return `!q${this.toString().slice(1,-1)}`;
     }
     static fromSLJson(json: string): SLuaQuaternion {
         const parts = json.substring(2).split(',');
-        return new SLuaQuaternion(Number(parts[0]), Number(parts[1]), Number(parts[2]), Number(parts[3]));
+        return new SLuaQuaternion(Number(parts[0] ?? 0), Number(parts[1] ?? 0), Number(parts[2] ?? 0), Number(parts[3] ?? 1));
     }
 }
 
