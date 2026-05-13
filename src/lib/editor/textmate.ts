@@ -109,6 +109,11 @@ function scopeToToken(scopes: string[]): string | null {
     
     // Support (built-in functions/types)
     if (scope.startsWith('support')) return 'variableName.standard';
+
+    console.log(scope);
+
+    // Invalid
+    if (scope.startsWith('invalid.deprecated')) return 'invalid strikethrough';
   }
   
   return null;

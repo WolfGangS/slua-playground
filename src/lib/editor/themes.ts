@@ -37,6 +37,7 @@ interface ThemeColors {
   punctuation: string;
   bool: string;
   builtin: string;
+  deprecated: string;
 
   // Diagnostics
   error: string;
@@ -71,6 +72,7 @@ const darkColors: ThemeColors = {
   punctuation: "var(--color-extended-gray-400)",
   bool: "var(--color-purple-500)",
   builtin: "var(--color-purple-500)",
+  deprecated: "var(--color-error-400)",
 
   error: "var(--color-red-700)",
   errorBg: "color-mix(in srgb, var(--color-red-700) 15%, transparent)",
@@ -103,6 +105,7 @@ const lightColors: ThemeColors = {
   punctuation: "var(--color-extended-gray-800)",
   bool: "var(--color-purple-1000)",
   builtin: "var(--color-purple-1000)",
+  deprecated: "var(--color-error-400)",
 
   error: "var(--color-red-900)",
   errorBg: "color-mix(in srgb, var(--color-red-900) 8%, transparent)",
@@ -317,6 +320,8 @@ function createTheme(colors: ThemeColors, isDark: boolean): Extension {
         { tag: tags.operator, color: colors.operator },
         { tag: tags.punctuation, color: colors.punctuation },
         { tag: tags.bracket, color: colors.punctuation },
+        { tag: tags.invalid, color: colors.deprecated },
+        { tag: tags.strikethrough, textDecoration: "line-through" },
       ]),
     ),
   ];
