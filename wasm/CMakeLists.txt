@@ -130,6 +130,13 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS "-ffp-contract=off"
 )
 
+# Uses std::abs without including <cstdlib>, which newer libc++ no longer
+# provides transitively.
+set_source_files_properties(
+    "${LUAU_SOURCE_DIR}/Analysis/src/TableLiteralInference.cpp"
+    PROPERTIES COMPILE_OPTIONS "-include;cstdlib"
+)
+
 add_library(Luau.Compiler STATIC ${LUAU_COMPILER_SOURCES})
 target_compile_features(Luau.Compiler PUBLIC cxx_std_17)
 target_include_directories(Luau.Compiler PUBLIC "${LUAU_SOURCE_DIR}/Compiler/include")
