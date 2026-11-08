@@ -1369,13 +1369,11 @@ static void ensureAnalysisInit() {
     options.enabledLintWarnings = g_lintOptions;
     
     g_frontend = std::make_unique<Luau::Frontend>(
+        g_useNewSolver ? Luau::SolverMode::New : Luau::SolverMode::Old,
         g_fileResolver.get(),
         g_configResolver.get(),
         options
     );
-    // This SLua tree's Frontend constructor does not take SolverMode. Upstream
-    // Luau does; setLuauSolverMode is the equivalent on the tree we build.
-    g_frontend->setLuauSolverMode(g_useNewSolver ? Luau::SolverMode::New : Luau::SolverMode::Old);
     
     // Register built-in types
     Luau::registerBuiltinGlobals(*g_frontend, g_frontend->globals, false);

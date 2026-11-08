@@ -43,6 +43,17 @@ file(GLOB LUAU_VM_SOURCES
     "${LUAU_SOURCE_DIR}/VM/src/apr/*.cpp"
 )
 file(GLOB LUAU_REQUIRE_SOURCES "${LUAU_SOURCE_DIR}/Require/src/*.cpp")
+file(GLOB LUAU_LSLBUILTINS_SOURCES "${LUAU_SOURCE_DIR}/LSLBuiltins/src/*.cpp")
+
+# Embed builtins.txt into a header file at configure time
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${LUAU_SOURCE_DIR}/builtins.txt")
+file(READ "${LUAU_SOURCE_DIR}/builtins.txt" BUILTINS_HEX HEX)
+string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1, " BUILTINS_HEX_ARRAY "${BUILTINS_HEX}")
+configure_file(
+    "${LUAU_SOURCE_DIR}/LSLBuiltins/src/builtins_embedded.h.in"
+    "${CMAKE_BINARY_DIR}/builtins_embedded.h"
+    @ONLY
+)
 
 # CodeGen sources - only include files needed for assembly TEXT generation
 # Exclude files that require native JIT features (memory allocation, cache flush, etc.)
@@ -94,28 +105,35 @@ target_compile_features(Luau.Ast PUBLIC cxx_std_17)
 target_include_directories(Luau.Ast PUBLIC "${LUAU_SOURCE_DIR}/Ast/include")
 target_link_libraries(Luau.Ast PUBLIC Luau.Common)
 
-# Upstream Luau splits bytecode into its own library. The SLua tree this
-# playground builds still keeps those sources inside Compiler/.
-if(LUAU_BYTECODE_SOURCES)
-    add_library(Luau.Bytecode STATIC ${LUAU_BYTECODE_SOURCES})
-    target_compile_features(Luau.Bytecode PUBLIC cxx_std_17)
-    target_include_directories(Luau.Bytecode PUBLIC "${LUAU_SOURCE_DIR}/Bytecode/include")
-    target_link_libraries(Luau.Bytecode PUBLIC Luau.Common)
-endif()
+add_library(Luau.LSLBuiltins STATIC ${LUAU_LSLBUILTINS_SOURCES})
+target_compile_features(Luau.LSLBuiltins PUBLIC cxx_std_17)
+target_include_directories(Luau.LSLBuiltins PUBLIC "${LUAU_SOURCE_DIR}/LSLBuiltins/include")
+target_include_directories(Luau.LSLBuiltins PRIVATE "${CMAKE_BINARY_DIR}")
+target_link_libraries(Luau.LSLBuiltins PUBLIC Luau.Common)
+
+add_library(Luau.Bytecode STATIC ${LUAU_BYTECODE_SOURCES})
+target_compile_features(Luau.Bytecode PUBLIC cxx_std_17)
+target_include_directories(Luau.Bytecode PUBLIC "${LUAU_SOURCE_DIR}/Bytecode/include")
+target_link_libraries(Luau.Bytecode PUBLIC Luau.Common)
 
 add_library(Luau.VM STATIC ${LUAU_VM_SOURCES})
-target_compile_features(Luau.VM PUBLIC cxx_std_11)
+target_compile_features(Luau.VM PUBLIC cxx_std_17)
 target_include_directories(Luau.VM PUBLIC "${LUAU_SOURCE_DIR}/VM/include")
 target_include_directories(Luau.VM PRIVATE "${LUAU_SOURCE_DIR}/VM/src")
-target_link_libraries(Luau.VM PUBLIC Luau.Common)
+target_link_libraries(Luau.VM PUBLIC Luau.Common Luau.LSLBuiltins)
+
+# GCC doesn't support the FP_CONTRACT pragma, so multiply-add fusion has to be
+# disabled per file to keep LSL float semantics.
+set_source_files_properties(
+    "${LUAU_SOURCE_DIR}/VM/src/lll.cpp"
+    "${LUAU_SOURCE_DIR}/VM/src/llsl.cpp"
+    PROPERTIES COMPILE_FLAGS "-ffp-contract=off"
+)
 
 add_library(Luau.Compiler STATIC ${LUAU_COMPILER_SOURCES})
 target_compile_features(Luau.Compiler PUBLIC cxx_std_17)
 target_include_directories(Luau.Compiler PUBLIC "${LUAU_SOURCE_DIR}/Compiler/include")
-target_link_libraries(Luau.Compiler PUBLIC Luau.Ast)
-if(TARGET Luau.Bytecode)
-    target_link_libraries(Luau.Compiler PUBLIC Luau.Bytecode)
-endif()
+target_link_libraries(Luau.Compiler PUBLIC Luau.Ast Luau.Bytecode Luau.LSLBuiltins)
 
 add_library(Luau.Config STATIC ${LUAU_CONFIG_SOURCES})
 target_compile_features(Luau.Config PUBLIC cxx_std_17)
@@ -143,7 +161,6 @@ target_link_libraries(Luau.CodeGen PUBLIC Luau.Ast Luau.VM Luau.Common)
 add_executable(luau_playground
     src/playground.cpp
     src/codegen_stubs.cpp
-    ${LUAU_SOURCE_DIR}/CLI/src/LSLBuiltins.cpp
 )
 
 target_include_directories(luau_playground PRIVATE
@@ -156,7 +173,7 @@ target_include_directories(luau_playground PRIVATE
     ${LUAU_SOURCE_DIR}/VM/include
     ${LUAU_SOURCE_DIR}/CodeGen/include
     ${LUAU_SOURCE_DIR}/Require/include
-    ${LUAU_SOURCE_DIR}/CLI/include
+    ${LUAU_SOURCE_DIR}/LSLBuiltins/include
 )
 
 target_link_libraries(luau_playground PRIVATE
@@ -168,6 +185,7 @@ target_link_libraries(luau_playground PRIVATE
     Luau.Common
     Luau.Require
     Luau.CodeGen
+    Luau.LSLBuiltins
 )
 
 # Common compile options for size optimization
@@ -189,9 +207,8 @@ target_compile_options(Luau.Ast PRIVATE ${LUAU_COMPILE_OPTIONS})
 target_compile_options(Luau.Common PRIVATE ${LUAU_COMPILE_OPTIONS})
 target_compile_options(Luau.Require PRIVATE ${LUAU_COMPILE_OPTIONS})
 target_compile_options(Luau.CodeGen PRIVATE ${LUAU_COMPILE_OPTIONS})
-if(TARGET Luau.Bytecode)
-    target_compile_options(Luau.Bytecode PRIVATE ${LUAU_COMPILE_OPTIONS})
-endif()
+target_compile_options(Luau.Bytecode PRIVATE ${LUAU_COMPILE_OPTIONS})
+target_compile_options(Luau.LSLBuiltins PRIVATE ${LUAU_COMPILE_OPTIONS})
 
 # Emscripten-specific settings
 if(EMSCRIPTEN)
