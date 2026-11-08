@@ -3,10 +3,10 @@ import { readFile, rename, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const grammarUrl =
-  process.env.LUAU_TEXTMATE_GRAMMAR_URL ??
-  'https://raw.githubusercontent.com/JohnnyMorganz/Luau.tmLanguage/main/Luau.tmLanguage.json';
+  process.env.SLUA_TEXTMATE_GRAMMAR_URL ??
+  'https://raw.githubusercontent.com/secondlife/lsl-definitions/refs/heads/main/generated/syntax/slua.tmLanguage.json';
 const grammarPath = fileURLToPath(
-  new URL('../src/lib/editor/Luau.tmLanguage.json', import.meta.url),
+  new URL('../src/lib/editor/SLua.tmLanguage.json', import.meta.url),
 );
 const temporaryPath = `${grammarPath}.tmp`;
 
@@ -16,7 +16,7 @@ const response = await fetch(grammarUrl, {
 
 if (!response.ok) {
   throw new Error(
-    `Unable to download Luau TextMate grammar: ${response.status} ${response.statusText}`,
+    `Unable to download SLua TextMate grammar: ${response.status} ${response.statusText}`,
   );
 }
 
@@ -24,7 +24,7 @@ const grammarSource = await response.text();
 const grammar = JSON.parse(grammarSource);
 
 if (grammar.name !== 'Luau' || grammar.scopeName !== 'source.luau') {
-  throw new Error('Downloaded file is not the expected Luau TextMate grammar');
+  throw new Error('Downloaded file is not the expected SLua TextMate grammar');
 }
 
 let currentSource;

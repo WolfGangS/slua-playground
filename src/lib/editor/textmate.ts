@@ -1,8 +1,8 @@
 /**
  * TextMate Grammar Integration for CodeMirror 6
  * 
- * Uses vscode-textmate with the official Luau.tmLanguage grammar
- * from https://github.com/JohnnyMorganz/Luau.tmLanguage
+ * Uses vscode-textmate with the SLua grammar from
+ * https://github.com/secondlife/lsl-definitions (generated/syntax/slua.tmLanguage.json)
  * 
  * Regex patterns are pre-compiled by compile-grammar.ts vite plugin
  * This eliminates the need for oniguruma WASM at runtime.
