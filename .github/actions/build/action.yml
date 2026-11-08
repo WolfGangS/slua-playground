@@ -69,6 +69,10 @@ runs:
         node-version: 24
         cache: npm
 
+    - name: Sync TextMate grammar
+      shell: bash
+      run: npm run sync:grammar
+
     - name: Install dependencies
       shell: bash
       run: npm ci
@@ -76,6 +80,10 @@ runs:
     - name: Type check
       shell: bash
       run: npm run check
+
+    - name: Test
+      shell: bash
+      run: npm test
 
     - name: Build
       shell: bash

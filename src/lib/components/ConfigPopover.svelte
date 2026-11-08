@@ -3,16 +3,22 @@
     settings, 
     setMode, 
     setSolver, 
+    enableLint,
+    disableLint,
     setOptimizationLevel,
     setDebugLevel,
     setCompilerRemarks,
     setOutputFormat,
+    keybindings,
+    setKeybindings,
     type LuauMode, 
     type SolverMode,
     type OptimizationLevel,
     type DebugLevel,
-    type OutputFormat
+    type OutputFormat,
+    type KeybindingMode
   } from '$lib/stores/settings';
+  import { getAllLints } from "$lib/luau/wasm";
   import Button from '$lib/components/Button.svelte';
   import { Icon } from '$lib/icons';
 
@@ -46,6 +52,11 @@
     { value: 3, label: 'arm64', description: 'arm64 native code' },
   ];
 
+  const keybindingOptions: { value: KeybindingMode; label: string }[] = [
+    { value: 'default', label: 'Default' },
+    { value: 'vim', label: 'Vim' },
+  ];
+
   async function handleModeChange(mode: LuauMode) {
     setMode(mode);
     const { refreshDiagnostics } = await import('$lib/editor/setup');
@@ -54,6 +65,14 @@
 
   async function handleSolverChange(solver: SolverMode) {
     setSolver(solver);
+    const { refreshDiagnostics } = await import('$lib/editor/setup');
+    setTimeout(() => refreshDiagnostics(), 50);
+  }
+
+  async function handleSetLintEnabled(lintCode: number | 'all', setEnabled: boolean) {
+    if (setEnabled) await enableLint(lintCode);
+    else await disableLint(lintCode);
+
     const { refreshDiagnostics } = await import('$lib/editor/setup');
     setTimeout(() => refreshDiagnostics(), 50);
   }
@@ -80,7 +99,7 @@
   <div class="space-y-4">
     <div>
       <h3 class="text-sm font-semibold text-(--text-primary) mb-1">Settings</h3>
-      <p class="text-xs text-(--text-muted)">Configure type checking and compiler</p>
+      <p class="text-xs text-(--text-muted)">Configure editor, type checking, lints, and compiler</p>
     </div>
 
     <!-- Type Checking Section -->
@@ -210,12 +229,92 @@
         <span class="text-xs text-(--text-secondary)">Show compiler remarks</span>
       </label>
     </div>
+
+    <div class="border-t border-(--border-color)"></div>
+
+    <!-- Lints Section -->
+    <div class="space-y-3">
+      <span class="text-xs font-semibold text-(--text-secondary) uppercase tracking-wide">Lints</span>
+
+      <!-- Enabled Lints -->
+      <div class="space-y-1.5">
+        <span class="text-xs text-(--text-muted)">Enabled Lints</span>
+
+        <div class="flex flex-col p-2 bg-(--bg-tertiary) max-h-[30vh] border-(--border-color) border rounded-md space-y-1">
+          {#await getAllLints}
+            <p class="text-xs text-(--text-secondary)">Loading lint options...</p>
+          {:then allLints} {#if allLints.length > 0}
+            {@const currentLints = $settings.lints}
+
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={currentLints === 'all' || currentLints.length === allLints.length}
+                onchange={(e) => handleSetLintEnabled('all', e.currentTarget.checked)}
+                class="w-4 h-4 rounded border-(--border-color) bg-(--bg-tertiary) accent-(--accent)"
+              />
+              <span class="text-xs text-(--text-secondary)">All lints enabled</span>
+            </label>
+
+            <div class="border-t border-(--border-color)"></div>
+
+            <div class="overflow-y-auto space-y-1">
+              {#each allLints as option (option.code)}
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={currentLints === 'all' || currentLints.includes(option.code)}
+                    onchange={(e) => handleSetLintEnabled(option.code, e.currentTarget.checked)}
+                    class="w-4 h-4 rounded border-(--border-color) bg-(--bg-tertiary) accent-(--accent)"
+                  />
+                  <span class="text-xs text-(--text-secondary)">
+                    {option.name} (<a class="text-link" target="_blank" rel="noopener noreferrer" href={`https://luau.org/lint/#${option.name.toLowerCase()}-${option.code}`}>{option.code}</a>)
+                  </span>
+                </label>
+              {/each}
+            </div>
+          {:else}
+            <p class="text-xs text-(--text-secondary)">No available lint options were found.</p>
+          {/if} {:catch error}
+            <p class="text-xs text-red-500">Failed to fetch Luau lint options!</p>
+            <p class="text-xs text-(--text-secondary)">{error}</p>
+          {/await}
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-(--border-color)"></div>
+
+    <!-- Editor Section -->
+    <div class="space-y-3">
+      <span class="text-xs font-semibold text-(--text-secondary) uppercase tracking-wide">Editor</span>
+
+      <!-- Keybindings -->
+      <div class="space-y-1.5">
+        <label for="keybindings-select" class="text-xs text-(--text-muted)">Keybindings</label>
+        <select
+          id="keybindings-select"
+          value={$keybindings}
+          onchange={(e) => setKeybindings(e.currentTarget.value as KeybindingMode)}
+          class="w-full px-2 py-1.5 text-xs rounded-md border border-(--border-color) bg-(--bg-tertiary) text-(--text-primary) focus:outline-none focus:border-(--accent) cursor-pointer"
+        >
+          {#each keybindingOptions as option}
+            <option value={option.value}>{option.label}</option>
+          {/each}
+        </select>
+      </div>
+    </div>
   </div>
 </div>
 
 <style>
   :global(.config-trigger) {
     anchor-name: --config-trigger;
+  }
+
+  .text-link {
+    color: var(--color-accent-500);
+    text-decoration: underline;
   }
 
   .config-popover {

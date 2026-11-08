@@ -31,6 +31,7 @@ endif()
 # Collect Luau source files
 file(GLOB LUAU_COMMON_SOURCES "${LUAU_SOURCE_DIR}/Common/src/*.cpp")
 file(GLOB LUAU_AST_SOURCES "${LUAU_SOURCE_DIR}/Ast/src/*.cpp")
+file(GLOB LUAU_BYTECODE_SOURCES "${LUAU_SOURCE_DIR}/Bytecode/src/*.cpp")
 file(GLOB LUAU_COMPILER_SOURCES "${LUAU_SOURCE_DIR}/Compiler/src/*.cpp")
 # Exclude SLua-specific LSLCompiler from the WASM build
 list(FILTER LUAU_COMPILER_SOURCES EXCLUDE REGEX "LSLCompiler\\.cpp$")
@@ -93,6 +94,15 @@ target_compile_features(Luau.Ast PUBLIC cxx_std_17)
 target_include_directories(Luau.Ast PUBLIC "${LUAU_SOURCE_DIR}/Ast/include")
 target_link_libraries(Luau.Ast PUBLIC Luau.Common)
 
+# Upstream Luau splits bytecode into its own library. The SLua tree this
+# playground builds still keeps those sources inside Compiler/.
+if(LUAU_BYTECODE_SOURCES)
+    add_library(Luau.Bytecode STATIC ${LUAU_BYTECODE_SOURCES})
+    target_compile_features(Luau.Bytecode PUBLIC cxx_std_17)
+    target_include_directories(Luau.Bytecode PUBLIC "${LUAU_SOURCE_DIR}/Bytecode/include")
+    target_link_libraries(Luau.Bytecode PUBLIC Luau.Common)
+endif()
+
 add_library(Luau.VM STATIC ${LUAU_VM_SOURCES})
 target_compile_features(Luau.VM PUBLIC cxx_std_11)
 target_include_directories(Luau.VM PUBLIC "${LUAU_SOURCE_DIR}/VM/include")
@@ -103,6 +113,9 @@ add_library(Luau.Compiler STATIC ${LUAU_COMPILER_SOURCES})
 target_compile_features(Luau.Compiler PUBLIC cxx_std_17)
 target_include_directories(Luau.Compiler PUBLIC "${LUAU_SOURCE_DIR}/Compiler/include")
 target_link_libraries(Luau.Compiler PUBLIC Luau.Ast)
+if(TARGET Luau.Bytecode)
+    target_link_libraries(Luau.Compiler PUBLIC Luau.Bytecode)
+endif()
 
 add_library(Luau.Config STATIC ${LUAU_CONFIG_SOURCES})
 target_compile_features(Luau.Config PUBLIC cxx_std_17)
@@ -176,6 +189,9 @@ target_compile_options(Luau.Ast PRIVATE ${LUAU_COMPILE_OPTIONS})
 target_compile_options(Luau.Common PRIVATE ${LUAU_COMPILE_OPTIONS})
 target_compile_options(Luau.Require PRIVATE ${LUAU_COMPILE_OPTIONS})
 target_compile_options(Luau.CodeGen PRIVATE ${LUAU_COMPILE_OPTIONS})
+if(TARGET Luau.Bytecode)
+    target_compile_options(Luau.Bytecode PRIVATE ${LUAU_COMPILE_OPTIONS})
+endif()
 
 # Emscripten-specific settings
 if(EMSCRIPTEN)
@@ -214,7 +230,6 @@ if(EMSCRIPTEN)
         -O3
         -flto
         --closure 1
-        -sWASM_BIGINT=1
         
         # Dead code elimination
         -Wl,--gc-sections

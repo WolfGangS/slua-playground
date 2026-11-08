@@ -5,6 +5,7 @@ import { type PlaygroundSettings } from '$lib/stores/settings';
 export const defaultSettings: PlaygroundSettings = {
   mode: 'strict',
   solver: 'new',
+  lints: 'all',
   optimizationLevel: 1,
   debugLevel: 1,
   outputFormat: 0,
@@ -19,6 +20,9 @@ export const PLAYGROUND_STORAGE_KEY = 'luau-playground-state';
 
 // Key for localStorage persistence of small UI state (panels, etc)
 export const UI_STORAGE_KEY = 'luau-playground-ui';
+
+// Key for localStorage persistence of the editor keybindings preference
+export const KEYBINDINGS_STORAGE_KEY = 'luau-playground-keybindings';
 
 // Filename used when working with a single default file
 export const DEFAULT_FILENAME = 'main.luau';

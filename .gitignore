@@ -12,6 +12,7 @@ wasm/src/builtins_embedded.h
 # IDE
 .idea/
 .vscode/
+.zed/
 *.swp
 *.swo
 
